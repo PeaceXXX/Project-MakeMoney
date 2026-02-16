@@ -1013,7 +1013,7 @@
         "Run example test"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-002",
@@ -1027,7 +1027,7 @@
         "Run example test"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-003",
@@ -1055,7 +1055,7 @@
         "Verify all tests pass"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-005",
