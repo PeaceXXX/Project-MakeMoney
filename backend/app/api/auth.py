@@ -133,3 +133,57 @@ async def reset_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+@router.get("/session", response_model=dict)
+async def get_session_info(
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current session information including expiration time.
+
+    Returns:
+    - user: Current user info
+    - expires_at: Token expiration timestamp
+    - remember_me: Whether "remember me" was selected
+    """
+    from jose import JWTError
+    from app.core.security import decode_access_token
+    from app.core.config import settings
+
+    try:
+        payload = decode_access_token(token)
+        if payload is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+
+        # Get user from database
+        from app.models.user import User
+        from app.services.auth_service import get_user_by_email
+
+        user = get_user_by_email(db, payload["sub"])
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+
+        # Calculate expiration time from exp claim
+        from datetime import datetime, timezone
+        exp_timestamp = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+
+        return {
+            "user": UserResponse.model_validate(user).model_dump(),
+            "expires_at": exp_timestamp.isoformat(),
+            "remember_me": payload.get("remember_me", False),
+            "is_active": user.is_active
+        }
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
