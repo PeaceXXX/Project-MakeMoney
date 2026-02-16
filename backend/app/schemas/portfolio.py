@@ -32,6 +32,18 @@ class PortfolioResponse(PortfolioBase):
     holdings_count: Optional[int] = 0
 
 
+class PerformanceMetrics(BaseModel):
+    """Schema for portfolio performance metrics."""
+    total_value: float
+    total_cost: float
+    profit_loss: float
+    profit_loss_percent: float
+    sharpe_ratio: Optional[float] = None
+    max_drawdown: Optional[float] = None
+    beta: Optional[float] = None
+    annualized_return: Optional[float] = None
+
+
 class HoldingBase(BaseModel):
     """Base holding schema."""
     symbol: str = Field(..., min_length=1, max_length=10, description="Stock symbol")
@@ -48,6 +60,9 @@ class HoldingResponse(HoldingBase):
     """Schema for holding response."""
     id: int
     portfolio_id: int
+    symbol: str
+    quantity: int
+    purchase_price: float
     created_at: datetime
     updated_at: datetime
     current_price: Optional[float] = None
