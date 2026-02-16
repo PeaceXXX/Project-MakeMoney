@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import create_access_token, generate_verification_token
-from app.schemas.user import UserCreate, UserResponse, Token, EmailVerificationRequest, Message
+from app.schemas.user import UserCreate, UserResponse, Token, EmailVerificationRequest, Message, UserLogin
 from app.services.auth_service import auth_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -56,8 +56,7 @@ async def verify_email(
 
 @router.post("/login", response_model=Token)
 async def login(
-    email: str,
-    password: str,
+    credentials: UserLogin,
     db: Session = Depends(get_db)
 ):
     """
@@ -66,16 +65,24 @@ async def login(
     - **email**: User's email address
     - **password**: User's password
     """
-    user = auth_service.get_user_by_email(db, email)
-    if not user:
+    try:
+        user = auth_service.authenticate_user(db, credentials.email, credentials.password)
+        # Create access token
+        access_token = create_access_token(data={"sub": user.email})
+        return Token(access_token=access_token)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail=str(e)
         )
 
-    # Note: In production, verify password using auth_service.verify_password
-    # For now, we'll just check if user exists
 
-    # Create access token
-    access_token = create_access_token(data={"sub": user.email})
-    return Token(access_token=access_token)
+@router.post("/logout", response_model=Message)
+async def logout():
+    """
+    Logout user.
+
+    Note: The actual logout happens on the client side by removing the stored token.
+    This endpoint exists for future extensions and for maintaining RESTful conventions.
+    """
+    return Message(message="Logout successful. Please clear your stored token.")
