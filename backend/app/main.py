@@ -4,7 +4,7 @@ Main FastAPI application entry point for the Trading Platform.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth, portfolio, trading, market_data
+from app.api import auth, portfolio, trading, market_data, api_keys
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -27,6 +27,7 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(portfolio.router, prefix=settings.API_V1_STR)
 app.include_router(trading.router, prefix=settings.API_V1_STR)
 app.include_router(market_data.router, prefix=settings.API_V1_STR)
+app.include_router(api_keys.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
