@@ -52,3 +52,11 @@ def generate_verification_token(email: str) -> str:
 def verify_token(token: str) -> Optional[dict]:
     """Verify and decode any JWT token."""
     return decode_access_token(token)
+
+
+def generate_password_reset_token(email: str) -> str:
+    """Generate a token for password reset."""
+    data = {"sub": email, "type": "password_reset"}
+    expire = datetime.utcnow() + timedelta(hours=1)
+    data.update({"exp": expire})
+    return jwt.encode(data, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
