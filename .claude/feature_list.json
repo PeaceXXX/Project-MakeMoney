@@ -443,7 +443,7 @@
         "Verify order is executed"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-002",
@@ -459,7 +459,7 @@
         "Verify order is placed"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-003",
@@ -475,7 +475,7 @@
         "Verify order is placed"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-004",
@@ -489,7 +489,7 @@
         "Verify order status is cancelled"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-005",
@@ -504,7 +504,7 @@
         "Verify order is updated"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-006",
@@ -518,7 +518,7 @@
         "Verify order is not placed"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-007",
@@ -532,7 +532,7 @@
         "Verify order is executed/placed"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-008",
