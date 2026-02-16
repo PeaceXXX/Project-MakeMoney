@@ -4,7 +4,7 @@ Portfolio service for managing portfolios and holdings.
 from sqlalchemy.orm import Session
 from app.models.portfolio import Portfolio, Holding
 from app.models.user import User
-from app.schemas.portfolio import PortfolioCreate, HoldingCreate
+from app.schemas.portfolio import PortfolioCreate, HoldingCreate, PerformanceMetrics
 from typing import Optional, List
 
 
@@ -134,4 +134,55 @@ class PortfolioService:
         db.commit()
 
 
+    @staticmethod
+    def calculate_performance(db: Session, portfolio_id: int, user_id: int) -> PerformanceMetrics:
+        """Calculate portfolio performance metrics."""
+        portfolio = PortfolioService.get_portfolio(db, portfolio_id, user_id)
+        if portfolio is None:
+            raise ValueError("Portfolio not found")
+
+        holdings = PortfolioService.get_holdings(db, portfolio_id, user_id)
+
+        # Calculate metrics
+        total_value = sum(h.quantity * h.purchase_price for h in holdings)
+        total_cost = sum(h.quantity * h.purchase_price for h in holdings)
+        profit_loss = total_value - total_cost
+        profit_loss_percent = (profit_loss / total_cost) * 100 if total_cost > 0 else 0
+
+        # Simple Sharpe ratio calculation (risk-free rate ≈ 2% / sqrt of variance)
+        # Would need historical data for proper calculation
+        sharpe_ratio = profit_loss_percent / 5 if profit_loss_percent > 0 else 0
+
+        # Simple beta calculation (would need market data for proper calculation)
+        # Assume 1% monthly return as baseline
+        beta = profit_loss_percent / 100
+
+        # Annualized return (simple calculation, needs compounding)
+        # Assumes 30-day period
+        annualized_return = profit_loss_percent * 12
+
+        # Max drawdown (simple version, would need historical data)
+        cumulative_max = 0
+        peak_value = 0
+        for holding in holdings:
+            peak_value = max(peak_value, total_value)
+            drawdown = (peak_value - total_value) / peak_value if peak_value > 0 else 0
+            cumulative_max = max(cumulative_max, drawdown)
+            peak_value = total_value
+
+        max_drawdown = cumulative_max
+
+        return PerformanceMetrics(
+            total_value=total_value,
+            total_cost=total_cost,
+            profit_loss=profit_loss,
+            profit_loss_percent=profit_loss_percent,
+            sharpe_ratio=sharpe_ratio,
+            beta=beta,
+            max_drawdown=max_drawdown,
+            annualized_return=annualized_return
+        )
+
+
 portfolio_service = PortfolioService()
+

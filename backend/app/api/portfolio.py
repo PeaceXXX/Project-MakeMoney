@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.deps import get_current_active_user
-from app.schemas.portfolio import PortfolioCreate, PortfolioResponse, HoldingCreate, HoldingResponse, Message
+from app.schemas.portfolio import PortfolioCreate, PortfolioResponse, HoldingCreate, HoldingResponse, Message, PerformanceMetrics
 from app.schemas.user import UserResponse
 from app.services.portfolio_service import portfolio_service
 
@@ -288,6 +288,27 @@ async def delete_holding(
     try:
         portfolio_service.delete_holding(db, holding_id, portfolio_id, current_user.id)
         return Message(message="Holding deleted successfully")
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+
+@router.get("/{portfolio_id}/performance", response_model=PerformanceMetrics)
+async def get_portfolio_performance(
+    portfolio_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserResponse = Depends(get_current_active_user)
+):
+    """
+    Get performance metrics for a portfolio.
+
+    - **portfolio_id**: Portfolio ID
+    """
+    try:
+        metrics = portfolio_service.calculate_performance(db, portfolio_id, current_user.id)
+        return metrics
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
