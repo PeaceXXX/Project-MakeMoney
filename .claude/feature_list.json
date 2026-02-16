@@ -153,7 +153,7 @@
         "View asset allocation chart"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-002",
@@ -167,7 +167,7 @@
         "Verify holding appears in portfolio"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-003",
@@ -181,7 +181,7 @@
         "Verify holding details are updated"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-004",
@@ -194,7 +194,7 @@
         "Verify holding is removed from portfolio"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-005",
@@ -208,7 +208,7 @@
         "View news related to holding"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-006",
@@ -221,7 +221,7 @@
         "Compare with benchmark indices"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-007",
