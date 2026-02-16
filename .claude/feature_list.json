@@ -289,7 +289,7 @@
         "Verify price updates in real-time"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-002",
@@ -302,7 +302,7 @@
         "Verify chart updates with correct data"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-003",
@@ -330,7 +330,7 @@
         "Verify stock appears in watchlist"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-005",
@@ -344,7 +344,7 @@
         "Verify stock is removed from watchlist"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-006",
@@ -358,7 +358,7 @@
         "Verify indices are current"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-007",
