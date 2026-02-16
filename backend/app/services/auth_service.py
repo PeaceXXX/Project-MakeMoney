@@ -4,7 +4,7 @@ Authentication service for user registration and verification.
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.user import UserCreate
-from app.core.security import get_password_hash, generate_verification_token, verify_token, verify_password
+from app.core.security import get_password_hash, generate_verification_token, verify_token, verify_password, generate_password_reset_token
 from typing import Optional
 
 
@@ -83,6 +83,41 @@ class AuthService:
         if not verify_password(password, user.hashed_password):
             raise ValueError("Incorrect email or password")
 
+        return user
+
+
+    @staticmethod
+    def request_password_reset(db: Session, email: str) -> str:
+        """Request password reset for a user."""
+        user = AuthService.get_user_by_email(db, email)
+        if user is None:
+            raise ValueError("User not found")
+
+        # Generate password reset token
+        token = generate_password_reset_token(email)
+        # In production, send email with the reset link
+        # send_password_reset_email(user.email, token)
+        return token
+
+    @staticmethod
+    def reset_password(db: Session, token: str, new_password: str) -> User:
+        """Reset user password using token."""
+        payload = verify_token(token)
+        if payload is None:
+            raise ValueError("Invalid or expired token")
+
+        if payload.get("type") != "password_reset":
+            raise ValueError("Invalid token type")
+
+        email = payload.get("sub")
+        user = AuthService.get_user_by_email(db, email)
+        if user is None:
+            raise ValueError("User not found")
+
+        # Update password
+        user.hashed_password = get_password_hash(new_password)
+        db.commit()
+        db.refresh(user)
         return user
 
 
