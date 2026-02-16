@@ -8,14 +8,35 @@ Objective: Set up initial environment and project structure
 
 Tasks Completed:
 - Created project directory structure
-- Generated comprehensive feature list (100 features)
+- Generated comprehensive feature list (101 features)
 - Initialized git repository
 - Set up FastAPI backend with basic structure
 - Set up Next.js frontend with basic structure
 - Created initialization scripts
 - Configured PostgreSQL database schema
 - Created agent harness files
+- Added institutional transactions feature to feature list
 
-Features Completed: 0/100
+Features Completed: 0/101
+
+===============================================
+SESSION 2 - [Date: 2026-02-16]
+Agent: Coding Agent
+Objective: Implement auth-001 - User registration with email verification
+
+Tasks Completed:
+- Created security.py with password hashing and JWT utilities
+- Created user schemas (UserCreate, UserResponse, Token)
+- Implemented auth service with user creation and email verification
+- Added authentication API endpoints (register, verify-email, login)
+- Created registration page with form validation
+- Created email verification page
+- Created login page
+- Updated home page with auth state and navigation
+- Added backend tests for auth endpoints
+- Added frontend tests for registration component
+- Created and merged PR #1
+
+Feature Completed: auth-001
 
 ===============================================
