@@ -42,7 +42,7 @@
         "Verify login works with new password"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-004",

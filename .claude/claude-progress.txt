@@ -63,3 +63,26 @@ Tasks Completed:
 Feature Completed: auth-002
 
 ===============================================
+SESSION 4 - [Date: 2026-02-16]
+Agent: Coding Agent
+Objective: Implement auth-003 - Password reset via email
+
+Tasks Completed:
+- Added generate_password_reset_token function to security
+- Added request_password_reset method to auth service
+- Added reset_password method to auth service
+- Added password-reset-request endpoint
+- Added password-reset confirmation endpoint
+- Added PasswordResetRequest and PasswordResetConfirm schemas
+- Created forgot-password page with form validation
+- Created reset-password page with token validation
+- Added password show/hide toggle
+- Added loading states during submission
+- Added success/error messages
+- Added back to login navigation
+- Added password reset tests
+- Created and merged PR #3
+
+Feature Completed: auth-003
+
+===============================================
