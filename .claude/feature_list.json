@@ -880,7 +880,7 @@
         "Generate and display key"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-002",
@@ -894,7 +894,7 @@
         "Verify key is no longer valid"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-003",
@@ -907,7 +907,7 @@
         "Verify authentication error"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-004",
@@ -920,7 +920,7 @@
         "Verify response status is 200"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-005",
@@ -934,7 +934,7 @@
         "Verify response status is 201"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-006",
@@ -947,7 +947,7 @@
         "Verify filtering parameters work"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-007",
@@ -960,7 +960,7 @@
         "Verify response includes price and volume"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-008",
@@ -986,7 +986,7 @@
         "Verify error format is consistent"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-010",
@@ -999,7 +999,7 @@
         "Verify example requests/responses"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-001",
