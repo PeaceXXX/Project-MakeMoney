@@ -4,7 +4,7 @@ Authentication service for user registration and verification.
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.user import UserCreate
-from app.core.security import get_password_hash, generate_verification_token, verify_token
+from app.core.security import get_password_hash, generate_verification_token, verify_token, verify_password
 from typing import Optional
 
 
@@ -67,6 +67,22 @@ class AuthService:
         user.email_verified = True
         db.commit()
         db.refresh(user)
+        return user
+
+    @staticmethod
+    def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
+        """Authenticate user with email and password."""
+        user = AuthService.get_user_by_email(db, email)
+        if user is None:
+            raise ValueError("Incorrect email or password")
+
+        if not user.is_active:
+            raise ValueError("Account is inactive")
+
+        # Verify password
+        if not verify_password(password, user.hashed_password):
+            raise ValueError("Incorrect email or password")
+
         return user
 
 
