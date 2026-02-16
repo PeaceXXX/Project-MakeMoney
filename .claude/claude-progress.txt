@@ -193,6 +193,28 @@ Features Completed:
 - hist-005: Position history (positions integrated in portfolio page)
 
 ===============================================
+SESSION 11 - [Date: 2026-02-16]
+Agent: Coding Agent
+Objective: Implement performance and alerts features (perf-001, perf-002, perf-003 and alert-001 through alert-003)
+
+Tasks Completed:
+- Created frontend alerts page with price, volume, and % change alerts
+- Added alert creation modal with type and condition selection
+- Created frontend performance page with metrics display
+- Added performance metrics (total return, Sharpe ratio, max drawdown, etc.)
+- Added timeframe selector for performance analysis
+- Added performance insights
+- Created PR #10 and merged
+
+Features Completed:
+- perf-001: Portfolio performance chart
+- perf-002: Performance metrics display
+- perf-003: Individual holding performance (in portfolio page)
+- alert-001: Price alert creation
+- alert-002: Alert notification delivery
+- alert-003: Delete alert
+
+===============================================
 
 NOTE FROM USER: If the session stops, continue after 5 hours.
 

@@ -670,7 +670,7 @@
         "View benchmark comparison"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-002",
@@ -684,7 +684,7 @@
         "View max drawdown"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-003",
@@ -698,7 +698,7 @@
         "View holding performance chart"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-004",
@@ -811,7 +811,7 @@
         "Save alert"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert-002",
@@ -824,7 +824,7 @@
         "Navigate to relevant stock"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert-003",
@@ -838,7 +838,7 @@
         "Verify alert is removed"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert-004",
