@@ -416,6 +416,21 @@
       "passes": false
     },
     {
+      "id": "market-011",
+      "category": "market_data",
+      "description": "Major institutional buy and sell transactions",
+      "steps": [
+        "Navigate to stock detail page",
+        "View institutional transactions section",
+        "Filter by transaction type (buy/sell)",
+        "View institutional investor name",
+        "View transaction amount and date",
+        "Sort by transaction amount or date"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
       "id": "trade-001",
       "category": "trading",
       "description": "Market order execution",
