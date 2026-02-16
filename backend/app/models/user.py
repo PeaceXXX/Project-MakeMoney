@@ -24,3 +24,4 @@ class User(Base):
 
     # Relationships
     portfolios = relationship("Portfolio", back_populates="user")
+    orders = relationship("Order", back_populates="user")
