@@ -1,0 +1,1267 @@
+{
+  "features": [
+    {
+      "id": "auth-001",
+      "category": "authentication",
+      "description": "User registration with email verification",
+      "steps": [
+        "Navigate to registration page",
+        "Enter valid email, password, and confirm password",
+        "Submit registration form",
+        "Verify confirmation email is sent",
+        "Click verification link",
+        "Verify user can login with credentials"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "auth-002",
+      "category": "authentication",
+      "description": "User login with email and password",
+      "steps": [
+        "Navigate to login page",
+        "Enter registered email and password",
+        "Submit login form",
+        "Verify user is redirected to dashboard",
+        "Verify authentication token is stored"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "auth-003",
+      "category": "authentication",
+      "description": "Password reset via email",
+      "steps": [
+        "Navigate to forgot password page",
+        "Enter registered email address",
+        "Submit reset request",
+        "Receive password reset email",
+        "Click reset link and set new password",
+        "Verify login works with new password"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "auth-004",
+      "category": "authentication",
+      "description": "Password change in user settings",
+      "steps": [
+        "Login to the platform",
+        "Navigate to account settings",
+        "Enter current password",
+        "Enter new password and confirmation",
+        "Submit password change",
+        "Verify login with new password"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "auth-005",
+      "category": "authentication",
+      "description": "Two-factor authentication (2FA) setup",
+      "steps": [
+        "Navigate to security settings",
+        "Enable 2FA",
+        "Scan QR code with authenticator app",
+        "Enter verification code",
+        "Verify 2FA is enabled"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "auth-006",
+      "category": "authentication",
+      "description": "Two-factor authentication during login",
+      "steps": [
+        "Login with email and password",
+        "Enter 2FA verification code",
+        "Verify successful login",
+        "Verify session is authenticated"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "auth-007",
+      "category": "authentication",
+      "description": "Session management - logout",
+      "steps": [
+        "Login to the platform",
+        "Click logout button",
+        "Verify user is redirected to login page",
+        "Verify authentication token is removed",
+        "Verify protected routes require login again"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "auth-008",
+      "category": "authentication",
+      "description": "Session timeout and auto-logout",
+      "steps": [
+        "Login to the platform",
+        "Wait for session timeout period",
+        "Attempt to perform authenticated action",
+        "Verify user is redirected to login",
+        "Verify session is terminated"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "auth-009",
+      "category": "authentication",
+      "description": "Remember me functionality",
+      "steps": [
+        "Login with 'remember me' checkbox selected",
+        "Close browser and reopen",
+        "Verify user is still logged in",
+        "Verify session persists across browser restarts"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "auth-010",
+      "category": "authentication",
+      "description": "OAuth2 with Google login",
+      "steps": [
+        "Navigate to login page",
+        "Click 'Login with Google'",
+        "Complete Google OAuth flow",
+        "Verify user is authenticated",
+        "Verify user profile is created or linked"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "port-001",
+      "category": "portfolio",
+      "description": "View portfolio summary",
+      "steps": [
+        "Login to the platform",
+        "Navigate to portfolio page",
+        "View total portfolio value",
+        "View daily/weekly/monthly P&L",
+        "View asset allocation chart"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "port-002",
+      "category": "portfolio",
+      "description": "Add holding to portfolio",
+      "steps": [
+        "Navigate to portfolio page",
+        "Click 'Add Holding'",
+        "Enter symbol, quantity, and purchase price",
+        "Submit the holding",
+        "Verify holding appears in portfolio"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "port-003",
+      "category": "portfolio",
+      "description": "Edit holding details",
+      "steps": [
+        "Navigate to portfolio page",
+        "Select holding to edit",
+        "Modify quantity or purchase price",
+        "Save changes",
+        "Verify holding details are updated"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "port-004",
+      "category": "portfolio",
+      "description": "Delete holding from portfolio",
+      "steps": [
+        "Navigate to portfolio page",
+        "Select holding to delete",
+        "Confirm deletion",
+        "Verify holding is removed from portfolio"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "port-005",
+      "category": "portfolio",
+      "description": "View individual holding details",
+      "steps": [
+        "Navigate to portfolio page",
+        "Click on a holding",
+        "View detailed information",
+        "View historical performance chart",
+        "View news related to holding"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "port-006",
+      "category": "portfolio",
+      "description": "Portfolio performance analytics",
+      "steps": [
+        "Navigate to portfolio page",
+        "View performance metrics (Sharpe ratio, etc.)",
+        "View performance over different time periods",
+        "Compare with benchmark indices"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "port-007",
+      "category": "portfolio",
+      "description": "Portfolio rebalancing suggestions",
+      "steps": [
+        "Navigate to portfolio page",
+        "View current asset allocation",
+        "View target allocation",
+        "View rebalancing recommendations",
+        "Execute suggested rebalancing trades"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "port-008",
+      "category": "portfolio",
+      "description": "Create multiple portfolios",
+      "steps": [
+        "Navigate to portfolio management",
+        "Click 'Create New Portfolio'",
+        "Enter portfolio name and description",
+        "Submit creation",
+        "Verify new portfolio appears in list"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "port-009",
+      "category": "portfolio",
+      "description": "Switch between portfolios",
+      "steps": [
+        "Navigate to portfolio selector",
+        "Select different portfolio",
+        "Verify view updates to selected portfolio",
+        "Verify correct holdings are displayed"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "port-010",
+      "category": "portfolio",
+      "description": "Portfolio export functionality",
+      "steps": [
+        "Navigate to portfolio page",
+        "Click export button",
+        "Select export format (CSV, PDF)",
+        "Download exported file",
+        "Verify file contains correct data"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "market-001",
+      "category": "market_data",
+      "description": "Real-time stock price display",
+      "steps": [
+        "Navigate to market data page",
+        "Search for a stock symbol",
+        "View current price",
+        "Verify price updates in real-time"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "market-002",
+      "category": "market_data",
+      "description": "Stock price chart with multiple timeframes",
+      "steps": [
+        "Navigate to stock detail page",
+        "View price chart",
+        "Switch between 1D, 1W, 1M, 3M, 1Y, ALL",
+        "Verify chart updates with correct data"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "market-003",
+      "category": "market_data",
+      "description": "Stock chart technical indicators",
+      "steps": [
+        "Navigate to stock detail page",
+        "Add technical indicator (MA, RSI, MACD)",
+        "View indicator on chart",
+        "Remove indicator",
+        "Verify indicator is no longer displayed"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "market-004",
+      "category": "market_data",
+      "description": "Market watchlist",
+      "steps": [
+        "Navigate to watchlist page",
+        "Click 'Add to watchlist'",
+        "Enter stock symbol",
+        "Submit addition",
+        "Verify stock appears in watchlist"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "market-005",
+      "category": "market_data",
+      "description": "Remove from watchlist",
+      "steps": [
+        "Navigate to watchlist page",
+        "Select stock to remove",
+        "Click remove button",
+        "Confirm removal",
+        "Verify stock is removed from watchlist"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "market-006",
+      "category": "market_data",
+      "description": "Market indices display",
+      "steps": [
+        "Navigate to market overview page",
+        "View S&P 500 index",
+        "View NASDAQ index",
+        "View DOW JONES index",
+        "Verify indices are current"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "market-007",
+      "category": "market_data",
+      "description": "Stock screener functionality",
+      "steps": [
+        "Navigate to screener page",
+        "Set filter criteria (price, market cap, etc.)",
+        "Apply filters",
+        "View filtered results",
+        "Sort results by various metrics"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "market-008",
+      "category": "market_data",
+      "description": "News feed for stocks",
+      "steps": [
+        "Navigate to stock detail page",
+        "View related news articles",
+        "Click news article",
+        "View article content",
+        "Return to platform"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "market-009",
+      "category": "market_data",
+      "description": "Company financial data display",
+      "steps": [
+        "Navigate to stock detail page",
+        "View financials tab",
+        "View income statement",
+        "View balance sheet",
+        "View cash flow statement"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "market-010",
+      "category": "market_data",
+      "description": "Market sector performance",
+      "steps": [
+        "Navigate to market overview page",
+        "View sector performance table",
+        "View sector breakdown chart",
+        "Click on sector for details"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "trade-001",
+      "category": "trading",
+      "description": "Market order execution",
+      "steps": [
+        "Navigate to trading page",
+        "Enter stock symbol",
+        "Select order type 'Market'",
+        "Enter quantity",
+        "Submit order",
+        "Verify order is executed"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "trade-002",
+      "category": "trading",
+      "description": "Limit order placement",
+      "steps": [
+        "Navigate to trading page",
+        "Enter stock symbol",
+        "Select order type 'Limit'",
+        "Set limit price",
+        "Enter quantity",
+        "Submit order",
+        "Verify order is placed"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "trade-003",
+      "category": "trading",
+      "description": "Stop-loss order placement",
+      "steps": [
+        "Navigate to trading page",
+        "Enter stock symbol",
+        "Select order type 'Stop-loss'",
+        "Set stop price",
+        "Enter quantity",
+        "Submit order",
+        "Verify order is placed"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "trade-004",
+      "category": "trading",
+      "description": "Cancel pending order",
+      "steps": [
+        "Navigate to orders page",
+        "Find pending order",
+        "Click cancel button",
+        "Confirm cancellation",
+        "Verify order status is cancelled"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "trade-005",
+      "category": "trading",
+      "description": "Modify existing order",
+      "steps": [
+        "Navigate to orders page",
+        "Find pending order",
+        "Click modify button",
+        "Update price or quantity",
+        "Submit modification",
+        "Verify order is updated"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "trade-006",
+      "category": "trading",
+      "description": "Order validation and error handling",
+      "steps": [
+        "Attempt to place order with invalid quantity",
+        "Verify error message is displayed",
+        "Attempt order with insufficient funds",
+        "Verify error message is displayed",
+        "Verify order is not placed"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "trade-007",
+      "category": "trading",
+      "description": "Order confirmation dialog",
+      "steps": [
+        "Submit order",
+        "View order confirmation dialog",
+        "Verify order details are correct",
+        "Confirm order",
+        "Verify order is executed/placed"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "trade-008",
+      "category": "trading",
+      "description": "Short selling order",
+      "steps": [
+        "Navigate to trading page",
+        "Select order type 'Short'",
+        "Enter stock symbol and quantity",
+        "Submit short order",
+        "Verify position is opened"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "trade-009",
+      "category": "trading",
+      "description": "Options order placement",
+      "steps": [
+        "Navigate to options trading page",
+        "Select option contract",
+        "Enter quantity",
+        "Submit order",
+        "Verify options position is opened"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "trade-010",
+      "category": "trading",
+      "description": "Order pre-trade risk check",
+      "steps": [
+        "Submit order that exceeds risk limits",
+        "Verify order is blocked",
+        "View risk warning message",
+        "Adjust order to meet risk criteria",
+        "Verify order is accepted"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "hist-001",
+      "category": "history",
+      "description": "View order history",
+      "steps": [
+        "Login to the platform",
+        "Navigate to order history page",
+        "View list of past orders",
+        "Filter by date range",
+        "Filter by order status"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "hist-002",
+      "category": "history",
+      "description": "View trade executions",
+      "steps": [
+        "Navigate to order history page",
+        "Click on a completed order",
+        "View execution details",
+        "View execution price and time",
+        "View associated fees"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "hist-003",
+      "category": "history",
+      "description": "Download order history",
+      "steps": [
+        "Navigate to order history page",
+        "Apply desired filters",
+        "Click download button",
+        "Select file format",
+        "Verify download contains correct data"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "hist-004",
+      "category": "history",
+      "description": "Order status tracking",
+      "steps": [
+        "Place a new order",
+        "View order in 'Pending' status",
+        "Wait for execution",
+        "Verify status changes to 'Filled' or 'Cancelled'"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "hist-005",
+      "category": "history",
+      "description": "Position history",
+      "steps": [
+        "Navigate to positions page",
+        "View current positions",
+        "View closed positions",
+        "Filter positions by symbol",
+        "Filter positions by date range"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "hist-006",
+      "category": "history",
+      "description": "Transaction history",
+      "steps": [
+        "Navigate to account page",
+        "View transaction history",
+        "View deposits and withdrawals",
+        "View dividend payments",
+        "View fee transactions"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "perf-001",
+      "category": "performance",
+      "description": "Portfolio performance chart",
+      "steps": [
+        "Navigate to performance page",
+        "View portfolio growth chart",
+        "Switch timeframes (1D, 1W, 1M, 3M, 1Y, ALL)",
+        "View benchmark comparison"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "perf-002",
+      "category": "performance",
+      "description": "Performance metrics display",
+      "steps": [
+        "Navigate to performance page",
+        "View total return percentage",
+        "View annualized return",
+        "View Sharpe ratio",
+        "View max drawdown"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "perf-003",
+      "category": "performance",
+      "description": "Individual holding performance",
+      "steps": [
+        "Navigate to portfolio page",
+        "Click on holding",
+        "View holding P&L",
+        "View holding return percentage",
+        "View holding performance chart"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "perf-004",
+      "category": "performance",
+      "description": "Sector performance analysis",
+      "steps": [
+        "Navigate to performance page",
+        "View sector breakdown",
+        "View sector-wise returns",
+        "Identify best/worst performing sectors"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "perf-005",
+      "category": "performance",
+      "description": "Performance report generation",
+      "steps": [
+        "Navigate to performance page",
+        "Click generate report",
+        "Select report parameters",
+        "Generate PDF report",
+        "Verify report contains correct data"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "risk-001",
+      "category": "risk",
+      "description": "Portfolio risk metrics",
+      "steps": [
+        "Navigate to risk analysis page",
+        "View portfolio volatility",
+        "View beta coefficient",
+        "View value at risk (VaR)",
+        "View concentration risk"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "risk-002",
+      "category": "risk",
+      "description": "Stop-loss level setting",
+      "steps": [
+        "Navigate to risk settings",
+        "Set portfolio stop-loss percentage",
+        "Save settings",
+        "Verify setting is active",
+        "Verify alert triggers when exceeded"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "risk-003",
+      "category": "risk",
+      "description": "Position sizing calculator",
+      "steps": [
+        "Navigate to risk tools page",
+        "Enter account balance",
+        "Enter risk percentage",
+        "Enter stop-loss distance",
+        "Calculate position size",
+        "View recommended quantity"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "risk-004",
+      "category": "risk",
+      "description": "Diversification analysis",
+      "steps": [
+        "Navigate to risk analysis page",
+        "View diversification score",
+        "View concentration warnings",
+        "View sector allocation",
+        "View asset class allocation"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "risk-005",
+      "category": "risk",
+      "description": "Drawdown monitoring",
+      "steps": [
+        "Navigate to risk analysis page",
+        "View current drawdown",
+        "View max drawdown period",
+        "View drawdown chart",
+        "Compare to historical drawdowns"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "alert-001",
+      "category": "alerts",
+      "description": "Price alert creation",
+      "steps": [
+        "Navigate to alerts page",
+        "Click create alert",
+        "Enter stock symbol",
+        "Set target price",
+        "Set condition (above/below)",
+        "Save alert"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "alert-002",
+      "category": "alerts",
+      "description": "Alert notification delivery",
+      "steps": [
+        "Wait for price to trigger alert",
+        "Receive notification (in-app/email)",
+        "Click notification",
+        "Navigate to relevant stock"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "alert-003",
+      "category": "alerts",
+      "description": "Delete alert",
+      "steps": [
+        "Navigate to alerts page",
+        "Find alert to delete",
+        "Click delete button",
+        "Confirm deletion",
+        "Verify alert is removed"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "alert-004",
+      "category": "alerts",
+      "description": "Volume alert creation",
+      "steps": [
+        "Navigate to alerts page",
+        "Click create alert",
+        "Select alert type 'Volume'",
+        "Enter volume threshold",
+        "Save alert"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "alert-005",
+      "category": "alerts",
+      "description": "Percentage change alert",
+      "steps": [
+        "Navigate to alerts page",
+        "Click create alert",
+        "Select alert type 'Percentage Change'",
+        "Set percentage threshold",
+        "Save alert"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "api-001",
+      "category": "api",
+      "description": "API key generation",
+      "steps": [
+        "Navigate to API settings",
+        "Click generate API key",
+        "Name the API key",
+        "Set key permissions",
+        "Generate and display key"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "api-002",
+      "category": "api",
+      "description": "API key revocation",
+      "steps": [
+        "Navigate to API settings",
+        "Find active API key",
+        "Click revoke button",
+        "Confirm revocation",
+        "Verify key is no longer valid"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "api-003",
+      "category": "api",
+      "description": "API authentication",
+      "steps": [
+        "Make API request with valid key",
+        "Verify successful authentication",
+        "Make API request without key",
+        "Verify authentication error"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-004",
+      "category": "api",
+      "description": "GET /api/portfolio endpoint",
+      "steps": [
+        "Authenticate with API key",
+        "Make GET request to /api/portfolio",
+        "Verify response contains portfolio data",
+        "Verify response status is 200"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-005",
+      "category": "api",
+      "description": "POST /api/orders endpoint",
+      "steps": [
+        "Authenticate with API key",
+        "Make POST request to /api/orders",
+        "Include order details in body",
+        "Verify order is created",
+        "Verify response status is 201"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-006",
+      "category": "api",
+      "description": "GET /api/orders endpoint",
+      "steps": [
+        "Authenticate with API key",
+        "Make GET request to /api/orders",
+        "Verify response contains orders list",
+        "Verify filtering parameters work"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-007",
+      "category": "api",
+      "description": "GET /api/market/{symbol} endpoint",
+      "steps": [
+        "Authenticate with API key",
+        "Make GET request to /api/market/{symbol}",
+        "Verify response contains market data",
+        "Verify response includes price and volume"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-008",
+      "category": "api",
+      "description": "API rate limiting",
+      "steps": [
+        "Make multiple API requests",
+        "Exceed rate limit",
+        "Verify 429 status is returned",
+        "Verify rate limit headers are present"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-009",
+      "category": "api",
+      "description": "API error responses",
+      "steps": [
+        "Make request with invalid data",
+        "Verify 400 status is returned",
+        "Verify error message is descriptive",
+        "Verify error format is consistent"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "api-010",
+      "category": "api",
+      "description": "API documentation",
+      "steps": [
+        "Navigate to /docs endpoint",
+        "View Swagger/OpenAPI documentation",
+        "Verify all endpoints are documented",
+        "Verify example requests/responses"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "test-001",
+      "category": "testing",
+      "description": "Backend unit tests setup",
+      "steps": [
+        "Install pytest",
+        "Create test directory structure",
+        "Create pytest configuration",
+        "Verify pytest can discover tests",
+        "Run example test"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "test-002",
+      "category": "testing",
+      "description": "Frontend unit tests setup",
+      "steps": [
+        "Install Jest and testing utilities",
+        "Create test directory structure",
+        "Create Jest configuration",
+        "Verify Jest can discover tests",
+        "Run example test"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "test-003",
+      "category": "testing",
+      "description": "E2E tests with Playwright",
+      "steps": [
+        "Install Playwright",
+        "Create E2E test directory",
+        "Configure Playwright",
+        "Create sample E2E test",
+        "Verify test runs successfully"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "test-004",
+      "category": "testing",
+      "description": "API integration tests",
+      "steps": [
+        "Create test database",
+        "Write API integration tests",
+        "Test authentication endpoints",
+        "Test CRUD operations",
+        "Verify all tests pass"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "test-005",
+      "category": "testing",
+      "description": "Test database fixtures",
+      "steps": [
+        "Create factory functions for test data",
+        "Create user fixtures",
+        "Create order fixtures",
+        "Create portfolio fixtures",
+        "Verify fixtures work correctly"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "test-006",
+      "category": "testing",
+      "description": "CI/CD pipeline for tests",
+      "steps": [
+        "Create GitHub Actions workflow",
+        "Configure test runs on push",
+        "Configure test runs on PR",
+        "Add test coverage reporting",
+        "Verify pipeline works"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "test-007",
+      "category": "testing",
+      "description": "Performance tests",
+      "steps": [
+        "Install Locust or similar tool",
+        "Create performance test scenarios",
+        "Test API endpoint performance",
+        "Test database query performance",
+        "Generate performance report"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "test-008",
+      "category": "testing",
+      "description": "Security tests",
+      "steps": [
+        "Install OWASP ZAP or similar",
+        "Run security scan",
+        "Check for SQL injection",
+        "Check for XSS vulnerabilities",
+        "Review and fix findings"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "test-009",
+      "category": "testing",
+      "description": "Test coverage reporting",
+      "steps": [
+        "Configure coverage tools",
+        "Run tests with coverage",
+        "View coverage report",
+        "Identify uncovered code",
+        "Set coverage threshold"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "test-010",
+      "category": "testing",
+      "description": "Test data cleanup",
+      "steps": [
+        "Ensure tests use test database",
+        "Create cleanup functions",
+        "Verify isolation between tests",
+        "Run full test suite",
+        "Verify clean state after tests"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "misc-001",
+      "category": "miscellaneous",
+      "description": "Dark mode toggle",
+      "steps": [
+        "Navigate to settings",
+        "Toggle dark mode",
+        "Verify UI updates to dark theme",
+        "Toggle back to light mode",
+        "Verify UI updates to light theme"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "misc-002",
+      "category": "miscellaneous",
+      "description": "User profile management",
+      "steps": [
+        "Navigate to profile settings",
+        "Update profile picture",
+        "Update display name",
+        "Update bio",
+        "Save changes"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "misc-003",
+      "category": "miscellaneous",
+      "description": "Language settings",
+      "steps": [
+        "Navigate to settings",
+        "Select language",
+        "Verify UI updates to selected language",
+        "Verify persistence across sessions"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "misc-004",
+      "category": "miscellaneous",
+      "description": "Time zone settings",
+      "steps": [
+        "Navigate to settings",
+        "Select time zone",
+        "Verify timestamps display correctly",
+        "Verify persistence across sessions"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "misc-005",
+      "category": "miscellaneous",
+      "description": "Help and support documentation",
+      "steps": [
+        "Navigate to help page",
+        "View getting started guide",
+        "View FAQ section",
+        "View video tutorials"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "misc-006",
+      "category": "miscellaneous",
+      "description": "Contact support form",
+      "steps": [
+        "Navigate to support page",
+        "Fill contact form",
+        "Select issue category",
+        "Submit form",
+        "Verify confirmation message"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "misc-007",
+      "category": "miscellaneous",
+      "description": "Referral program",
+      "steps": [
+        "Navigate to referral page",
+        "View referral link",
+        "Share referral link",
+        "Track referral stats",
+        "View earned rewards"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "misc-008",
+      "category": "miscellaneous",
+      "description": "Account deletion",
+      "steps": [
+        "Navigate to account settings",
+        "Request account deletion",
+        "Verify confirmation email is sent",
+        "Click confirmation link",
+        "Verify account and data are deleted"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "misc-009",
+      "category": "miscellaneous",
+      "description": "Responsive mobile design",
+      "steps": [
+        "Resize browser to mobile size",
+        "Verify layout adjusts correctly",
+        "Test navigation menu",
+        "Test key features on mobile",
+        "Verify touch interactions work"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "misc-010",
+      "category": "miscellaneous",
+      "description": "Accessibility compliance",
+      "steps": [
+        "Test with screen reader",
+        "Verify keyboard navigation works",
+        "Check color contrast ratios",
+        "Verify ARIA labels are present",
+        "Run accessibility audit"
+      ],
+      "priority": 3,
+      "passes": false
+    }
+  ]
+}

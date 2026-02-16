@@ -1,0 +1,9 @@
+{
+  "session_id": "session-001",
+  "agent_type": "coding_agent",
+  "start_time": "2026-02-15T10:00:00Z",
+  "features_in_progress": [],
+  "last_completed_feature": null,
+  "environment_state": "clean",
+  "notes": []
+}
