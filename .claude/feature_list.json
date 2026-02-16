@@ -27,7 +27,7 @@
         "Verify authentication token is stored"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-003",
