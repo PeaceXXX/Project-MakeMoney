@@ -588,7 +588,7 @@
         "Filter by order status"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "hist-002",
@@ -602,7 +602,7 @@
         "View associated fees"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "hist-003",
@@ -629,7 +629,7 @@
         "Verify status changes to 'Filled' or 'Cancelled'"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "hist-005",
@@ -643,7 +643,7 @@
         "Filter positions by date range"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "hist-006",
