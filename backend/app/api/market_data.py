@@ -19,6 +19,7 @@ from app.schemas.market_data import (
     WatchlistCreate,
     WatchlistResponse,
     MarketIndexCreate,
+    MarketIndexUpdate,
     MarketIndexResponse,
     MarketSnapshot,
     Timeframe
