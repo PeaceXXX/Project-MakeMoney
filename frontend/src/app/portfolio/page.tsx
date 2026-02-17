@@ -116,6 +116,46 @@ export default function PortfolioPage() {
     router.push('/login')
   }
 
+  const exportPortfolioToCSV = () => {
+    if (!selectedPortfolio || holdings.length === 0) {
+      alert('No portfolio data to export')
+      return
+    }
+
+    const headers = ['Symbol', 'Quantity', 'Purchase Price', 'Current Value', 'Gain/Loss']
+    const rows = holdings.map(holding => {
+      const currentValue = holding.quantity * holding.purchase_price
+      const gainLoss = currentValue - (holding.quantity * holding.purchase_price)
+      return [
+        holding.symbol,
+        holding.quantity,
+        holding.purchase_price.toFixed(2),
+        currentValue.toFixed(2),
+        gainLoss.toFixed(2)
+      ]
+    })
+
+    // Add summary row
+    rows.push([])
+    rows.push(['Total Value', '', '', calculateTotalValue().toFixed(2), ''])
+    rows.push(['Total P&L', '', '', calculatePnL().change.toFixed(2), `${calculatePnL().changePercent.toFixed(2)}%`])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${selectedPortfolio.name}_portfolio_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <main className="min-h-screen p-24">
       <div className="max-w-7xl mx-auto">
@@ -201,6 +241,20 @@ export default function PortfolioPage() {
                 <h2 className="text-3xl font-bold mb-6">
                   {selectedPortfolio.name}
                 </h2>
+
+                {/* Export Button */}
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={exportPortfolioToCSV}
+                    disabled={holdings.length === 0}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Export CSV</span>
+                  </button>
+                </div>
 
                 {selectedPortfolio.description && (
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
