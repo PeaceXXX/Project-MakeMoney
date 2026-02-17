@@ -276,7 +276,7 @@
         "Verify file contains correct data"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-001",
@@ -1262,7 +1262,7 @@
         "Verify touch interactions work"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-010",
