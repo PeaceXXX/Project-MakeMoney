@@ -1041,7 +1041,7 @@
         "Verify test runs successfully"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-004",
