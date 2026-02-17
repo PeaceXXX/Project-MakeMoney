@@ -2,11 +2,14 @@
 Authentication API endpoints.
 """
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import create_access_token, generate_verification_token
 from app.schemas.user import UserCreate, UserResponse, Token, EmailVerificationRequest, Message, UserLogin, PasswordResetRequest, PasswordResetConfirm
 from app.services.auth_service import auth_service
+
+security = HTTPBearer()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -162,9 +165,8 @@ async def get_session_info(
 
         # Get user from database
         from app.models.user import User
-        from app.services.auth_service import get_user_by_email
 
-        user = get_user_by_email(db, payload["sub"])
+        user = auth_service.get_user_by_email(db, payload["sub"])
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
