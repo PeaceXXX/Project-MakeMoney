@@ -112,7 +112,7 @@
         "Verify session is terminated"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-009",
@@ -125,7 +125,7 @@
         "Verify session persists across browser restarts"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-010",
@@ -372,7 +372,7 @@
         "Sort results by various metrics"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-008",
@@ -616,7 +616,7 @@
         "Verify download contains correct data"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "hist-004",
@@ -657,7 +657,7 @@
         "View fee transactions"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-001",
@@ -711,7 +711,7 @@
         "Identify best/worst performing sectors"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-005",
@@ -725,7 +725,7 @@
         "Verify report contains correct data"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "risk-001",
