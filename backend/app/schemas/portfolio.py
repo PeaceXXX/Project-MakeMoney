@@ -66,3 +66,8 @@ class HoldingResponse(HoldingBase):
     created_at: datetime
     updated_at: datetime
     current_price: Optional[float] = None
+
+
+class Message(BaseModel):
+    """Schema for generic message response."""
+    message: str

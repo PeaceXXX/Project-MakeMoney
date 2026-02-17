@@ -123,3 +123,7 @@ class OrderValidationResult(BaseModel):
     valid: bool
     errors: List[str] = []
     warnings: List[str] = []
+
+
+# Resolve forward references for Pydantic v2
+OrderDetail.model_rebuild()
