@@ -852,7 +852,7 @@
         "Save alert"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert-005",
@@ -866,7 +866,7 @@
         "Save alert"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-001",
@@ -973,7 +973,7 @@
         "Verify rate limit headers are present"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "api-009",
