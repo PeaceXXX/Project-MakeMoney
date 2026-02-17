@@ -739,7 +739,7 @@
         "View concentration risk"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "risk-002",
@@ -782,7 +782,7 @@
         "View asset class allocation"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "risk-005",
@@ -796,7 +796,7 @@
         "Compare to historical drawdowns"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "alert-001",
