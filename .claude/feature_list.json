@@ -57,7 +57,7 @@
         "Verify login with new password"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-005",
@@ -413,7 +413,7 @@
         "Click on sector for details"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-011",
