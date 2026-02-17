@@ -47,6 +47,39 @@ export default function OrdersPage() {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+  // Export orders to CSV
+  const exportToCSV = () => {
+    const headers = ['Order ID', 'Symbol', 'Type', 'Side', 'Quantity', 'Filled Qty', 'Limit Price', 'Stop Price', 'Status', 'Created At', 'Updated At'];
+    const rows = filteredOrders.map(order => [
+      order.id,
+      order.symbol,
+      order.order_type.toUpperCase(),
+      order.side.toUpperCase(),
+      order.quantity,
+      order.filled_quantity,
+      order.limit_price || '',
+      order.stop_price || '',
+      order.status.toUpperCase(),
+      new Date(order.created_at).toLocaleString(),
+      new Date(order.updated_at).toLocaleString()
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Fetch orders
   const fetchOrders = async () => {
     try {
@@ -130,9 +163,20 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Order History</h1>
-          <p className="text-gray-600">View and manage your trading orders</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Order History</h1>
+            <p className="text-gray-600">View and manage your trading orders</p>
+          </div>
+          <button
+            onClick={exportToCSV}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all flex items-center space-x-2"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Export CSV</span>
+          </button>
         </div>
 
         {/* Filters */}
