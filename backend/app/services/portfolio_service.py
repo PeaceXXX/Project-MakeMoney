@@ -4,7 +4,7 @@ Portfolio service for managing portfolios and holdings.
 from sqlalchemy.orm import Session
 from app.models.portfolio import Portfolio, Holding
 from app.models.user import User
-from app.schemas.portfolio import PortfolioCreate, HoldingCreate, PerformanceMetrics
+from app.schemas.portfolio import PortfolioCreate, PortfolioUpdate, HoldingCreate, PerformanceMetrics
 from typing import Optional, List
 
 
@@ -39,16 +39,16 @@ class PortfolioService:
         return db_portfolio
 
     @staticmethod
-    def update_portfolio(db: Session, portfolio_id: int, user_id: int, name: Optional[str], description: Optional[str]) -> Portfolio:
+    def update_portfolio(db: Session, portfolio_id: int, user_id: int, update_data: PortfolioUpdate) -> Portfolio:
         """Update an existing portfolio."""
         portfolio = PortfolioService.get_portfolio(db, portfolio_id, user_id)
         if portfolio is None:
             raise ValueError("Portfolio not found")
 
-        if name is not None:
-            portfolio.name = name
-        if description is not None:
-            portfolio.description = description
+        if update_data.name is not None:
+            portfolio.name = update_data.name
+        if update_data.description is not None:
+            portfolio.description = update_data.description
 
         db.commit()
         db.refresh(portfolio)

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.deps import get_current_active_user
-from app.schemas.portfolio import PortfolioCreate, PortfolioResponse, HoldingCreate, HoldingResponse, Message, PerformanceMetrics
+from app.schemas.portfolio import PortfolioCreate, PortfolioUpdate, PortfolioResponse, HoldingCreate, HoldingResponse, Message, PerformanceMetrics
 from app.schemas.user import UserResponse
 from app.services.portfolio_service import portfolio_service
 
@@ -104,8 +104,7 @@ async def create_portfolio(
 @router.put("/{portfolio_id}", response_model=PortfolioResponse)
 async def update_portfolio(
     portfolio_id: int,
-    name: str = None,
-    description: str = None,
+    update_data: PortfolioUpdate,
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_active_user)
 ):
@@ -117,13 +116,6 @@ async def update_portfolio(
     - **description**: Optional new description
     """
     try:
-        from app.schemas.portfolio import PortfolioUpdate
-        update_data = PortfolioUpdate()
-        if name is not None:
-            update_data.name = name
-        if description is not None:
-            update_data.description = description
-
         portfolio = portfolio_service.update_portfolio(db, portfolio_id, current_user.id, update_data)
         return PortfolioResponse(
             id=portfolio.id,
