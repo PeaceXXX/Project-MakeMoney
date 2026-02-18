@@ -546,7 +546,7 @@
         "Verify position is opened"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-009",
