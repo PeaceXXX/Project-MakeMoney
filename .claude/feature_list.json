@@ -1069,7 +1069,7 @@
         "Verify fixtures work correctly"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-006",
