@@ -1083,7 +1083,7 @@
         "Verify pipeline works"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-007",
