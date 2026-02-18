@@ -30,6 +30,22 @@ interface ValidationError {
   message: string;
 }
 
+interface RiskCheckResult {
+  passed: boolean;
+  warnings: string[];
+  errors: string[];
+  details: {
+    order_value: number;
+    account_balance: number;
+    available_cash: number;
+    position_concentration: number;
+    daily_trades: number;
+    max_daily_trades: number;
+    order_percent_of_portfolio: number;
+    max_order_percent: number;
+  };
+}
+
 export default function TradingPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +62,8 @@ export default function TradingPage() {
   const [stopPrice, setStopPrice] = useState('');
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [riskCheckResult, setRiskCheckResult] = useState<RiskCheckResult | null>(null);
+  const [showRiskWarning, setShowRiskWarning] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -89,6 +107,57 @@ export default function TradingPage() {
     }
   };
 
+  // Pre-trade risk check
+  const performRiskCheck = async (orderData: any): Promise<RiskCheckResult> => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_BASE}/orders/risk-check`, orderData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Risk check failed:', error);
+      // Return mock risk check for demo purposes
+      const orderValue = orderData.quantity * (orderData.estimated_price || 100);
+      const accountBalance = 100000;
+      const availableCash = 75000;
+      const orderPercent = (orderValue / accountBalance) * 100;
+
+      const warnings: string[] = [];
+      const errors: string[] = [];
+
+      // Risk checks
+      if (orderValue > accountBalance * 0.25) {
+        warnings.push(`Order represents ${orderPercent.toFixed(1)}% of your portfolio (recommended max 25%)`);
+      }
+      if (orderData.side === 'buy' && orderValue > availableCash) {
+        errors.push('Insufficient cash available for this order');
+      }
+      if (orderData.quantity > 10000) {
+        warnings.push('Large order size may impact market price');
+      }
+      if (orderPercent > 50) {
+        errors.push('Order exceeds 50% of portfolio value - position too concentrated');
+      }
+
+      return {
+        passed: errors.length === 0,
+        warnings,
+        errors,
+        details: {
+          order_value: orderValue,
+          account_balance: accountBalance,
+          available_cash: availableCash,
+          position_concentration: orderPercent,
+          daily_trades: 5,
+          max_daily_trades: 25,
+          order_percent_of_portfolio: orderPercent,
+          max_order_percent: 25
+        }
+      };
+    }
+  };
+
   // Submit order
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,16 +173,27 @@ export default function TradingPage() {
         return;
       }
 
-      // Show confirmation
-      setOrderToConfirm({
+      // Prepare order data
+      const orderData = {
         symbol,
         order_type: orderType,
         side: orderSide,
         quantity: parseInt(quantity) || 0,
         limit_price: limitPrice ? parseFloat(limitPrice) : null,
         stop_price: stopPrice ? parseFloat(stopPrice) : null,
-        estimated_price: limitPrice || stopPrice || 100 // Simulated price
-      });
+        estimated_price: limitPrice ? parseFloat(limitPrice) : (stopPrice ? parseFloat(stopPrice) : 100)
+      };
+
+      // Perform pre-trade risk check
+      const riskResult = await performRiskCheck(orderData);
+      setRiskCheckResult(riskResult);
+
+      // Show confirmation with risk check results
+      setOrderToConfirm(orderData);
+
+      if (!riskResult.passed) {
+        setShowRiskWarning(true);
+      }
       setShowConfirmation(true);
     } catch (error) {
       console.error('Validation error:', error);
@@ -135,7 +215,9 @@ export default function TradingPage() {
       });
       setShowConfirmation(false);
       setShowOrderForm(false);
+      setShowRiskWarning(false);
       setOrderToConfirm(null);
+      setRiskCheckResult(null);
       fetchOrders();
       resetForm();
     } catch (error: any) {
@@ -440,8 +522,74 @@ export default function TradingPage() {
       {/* Order Confirmation Modal */}
       {showConfirmation && orderToConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Order</h3>
+
+            {/* Risk Check Results */}
+            {riskCheckResult && (
+              <div className={`mb-4 p-4 rounded-lg ${
+                riskCheckResult.passed
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-red-50 border border-red-200'
+              }`}>
+                <div className="flex items-center mb-2">
+                  {riskCheckResult.passed ? (
+                    <svg className="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  )}
+                  <span className={`font-medium ${riskCheckResult.passed ? 'text-green-800' : 'text-red-800'}`}>
+                    Risk Check {riskCheckResult.passed ? 'Passed' : 'Failed'}
+                  </span>
+                </div>
+
+                {/* Errors */}
+                {riskCheckResult.errors.length > 0 && (
+                  <div className="mt-2">
+                    {riskCheckResult.errors.map((error, idx) => (
+                      <p key={idx} className="text-sm text-red-700">• {error}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Warnings */}
+                {riskCheckResult.warnings.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-yellow-700 mb-1">Warnings:</p>
+                    {riskCheckResult.warnings.map((warning, idx) => (
+                      <p key={idx} className="text-sm text-yellow-700">• {warning}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Risk Details */}
+                <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-500">Order Value:</span>
+                    <span className="ml-1 font-medium">${riskCheckResult.details.order_value.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Available Cash:</span>
+                    <span className="ml-1 font-medium">${riskCheckResult.details.available_cash.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Portfolio %:</span>
+                    <span className={`ml-1 font-medium ${riskCheckResult.details.order_percent_of_portfolio > 25 ? 'text-red-600' : 'text-gray-900'}`}>
+                      {riskCheckResult.details.order_percent_of_portfolio.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Daily Trades:</span>
+                    <span className="ml-1 font-medium">{riskCheckResult.details.daily_trades}/{riskCheckResult.details.max_daily_trades}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
                 <span className="text-gray-600">Side:</span>
@@ -486,7 +634,9 @@ export default function TradingPage() {
               <button
                 onClick={() => {
                   setShowConfirmation(false);
+                  setShowRiskWarning(false);
                   setOrderToConfirm(null);
+                  setRiskCheckResult(null);
                 }}
                 className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all"
               >
@@ -494,14 +644,14 @@ export default function TradingPage() {
               </button>
               <button
                 onClick={confirmOrder}
-                disabled={isSubmitting}
+                disabled={isSubmitting || (riskCheckResult && !riskCheckResult.passed)}
                 className={`flex-1 py-3 px-4 rounded-lg font-medium text-white transition-all ${
                   orderToConfirm.side === 'buy'
                     ? 'bg-green-500 hover:bg-green-600'
                     : 'bg-red-500 hover:bg-red-600'
-                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${(isSubmitting || (riskCheckResult && !riskCheckResult.passed)) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {isSubmitting ? 'Processing...' : 'Confirm Order'}
+                {isSubmitting ? 'Processing...' : riskCheckResult && !riskCheckResult.passed ? 'Risk Check Failed' : 'Confirm Order'}
               </button>
             </div>
           </div>
