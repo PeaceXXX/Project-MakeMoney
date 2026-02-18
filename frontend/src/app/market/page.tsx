@@ -31,6 +31,28 @@ interface WatchlistItem {
   notes: string | null;
 }
 
+interface TechnicalIndicator {
+  name: string;
+  displayName: string;
+  params: Record<string, number>;
+  values: number[];
+}
+
+interface IndicatorOption {
+  id: string;
+  name: string;
+  type: 'overlay' | 'oscillator';
+  defaultParams: Record<string, number>;
+}
+
+const INDICATOR_OPTIONS: IndicatorOption[] = [
+  { id: 'sma', name: 'Simple Moving Average (SMA)', type: 'overlay', defaultParams: { period: 20 } },
+  { id: 'ema', name: 'Exponential Moving Average (EMA)', type: 'overlay', defaultParams: { period: 20 } },
+  { id: 'rsi', name: 'Relative Strength Index (RSI)', type: 'oscillator', defaultParams: { period: 14 } },
+  { id: 'macd', name: 'MACD', type: 'oscillator', defaultParams: { fast: 12, slow: 26, signal: 9 } },
+  { id: 'bb', name: 'Bollinger Bands', type: 'overlay', defaultParams: { period: 20, stdDev: 2 } },
+];
+
 export default function MarketPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Stock[]>([]);
@@ -41,6 +63,10 @@ export default function MarketPage() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [activeIndicators, setActiveIndicators] = useState<string[]>([]);
+  const [indicatorParams, setIndicatorParams] = useState<Record<string, Record<string, number>>>({});
+  const [showIndicatorModal, setShowIndicatorModal] = useState(false);
+  const [indicatorValues, setIndicatorValues] = useState<Record<string, TechnicalIndicator>>({});
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -168,6 +194,177 @@ export default function MarketPage() {
     if (change === null) return 'text-gray-500';
     return change >= 0 ? 'text-green-600' : 'text-red-600';
   };
+
+  // Calculate technical indicators
+  const calculateSMA = (data: number[], period: number): number[] => {
+    const result: number[] = [];
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        result.push(NaN);
+      } else {
+        const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+        result.push(sum / period);
+      }
+    }
+    return result;
+  };
+
+  const calculateEMA = (data: number[], period: number): number[] => {
+    const result: number[] = [];
+    const multiplier = 2 / (period + 1);
+    let ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
+
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        result.push(NaN);
+      } else if (i === period - 1) {
+        result.push(ema);
+      } else {
+        ema = (data[i] - ema) * multiplier + ema;
+        result.push(ema);
+      }
+    }
+    return result;
+  };
+
+  const calculateRSI = (data: number[], period: number): number[] => {
+    const result: number[] = [];
+    const gains: number[] = [];
+    const losses: number[] = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const change = data[i] - data[i - 1];
+      gains.push(change > 0 ? change : 0);
+      losses.push(change < 0 ? Math.abs(change) : 0);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      if (i < period) {
+        result.push(NaN);
+      } else {
+        const avgGain = gains.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+        const avgLoss = losses.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        result.push(100 - (100 / (1 + rs)));
+      }
+    }
+    return result;
+  };
+
+  const calculateMACD = (data: number[], fast: number, slow: number, signal: number): { macd: number[], signal: number[], histogram: number[] } => {
+    const emaFast = calculateEMA(data, fast);
+    const emaSlow = calculateEMA(data, slow);
+    const macdLine = emaFast.map((fast, i) => fast - emaSlow[i]);
+    const signalLine = calculateEMA(macdLine.filter(v => !isNaN(v)), signal);
+    const histogram = macdLine.map((macd, i) => {
+      const signalIdx = i - (slow - 1);
+      if (signalIdx < 0 || signalIdx >= signalLine.length) return NaN;
+      return macd - signalLine[signalIdx];
+    });
+
+    return { macd: macdLine, signal: signalLine, histogram };
+  };
+
+  const calculateBollingerBands = (data: number[], period: number, stdDev: number): { upper: number[], middle: number[], lower: number[] } => {
+    const middle = calculateSMA(data, period);
+    const upper: number[] = [];
+    const lower: number[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        upper.push(NaN);
+        lower.push(NaN);
+      } else {
+        const slice = data.slice(i - period + 1, i + 1);
+        const mean = middle[i];
+        const squaredDiffs = slice.map(v => Math.pow(v - mean, 2));
+        const std = Math.sqrt(squaredDiffs.reduce((a, b) => a + b, 0) / period);
+        upper.push(mean + stdDev * std);
+        lower.push(mean - stdDev * std);
+      }
+    }
+
+    return { upper, middle, lower };
+  };
+
+  // Toggle indicator
+  const toggleIndicator = (indicatorId: string) => {
+    if (activeIndicators.includes(indicatorId)) {
+      setActiveIndicators(activeIndicators.filter(id => id !== indicatorId));
+      const newValues = { ...indicatorValues };
+      delete newValues[indicatorId];
+      setIndicatorValues(newValues);
+    } else {
+      const indicator = INDICATOR_OPTIONS.find(i => i.id === indicatorId);
+      if (indicator) {
+        setIndicatorParams(prev => ({
+          ...prev,
+          [indicatorId]: indicator.defaultParams
+        }));
+        setActiveIndicators([...activeIndicators, indicatorId]);
+      }
+    }
+    setShowIndicatorModal(false);
+  };
+
+  // Recalculate indicators when data or params change
+  useEffect(() => {
+    if (historicalData.length === 0) return;
+
+    const prices = historicalData.map((d: any) => d.close || d.price);
+    const newValues: Record<string, TechnicalIndicator> = {};
+
+    activeIndicators.forEach(indicatorId => {
+      const params = indicatorParams[indicatorId] || INDICATOR_OPTIONS.find(i => i.id === indicatorId)?.defaultParams || {};
+
+      switch (indicatorId) {
+        case 'sma':
+          newValues['sma'] = {
+            name: 'sma',
+            displayName: `SMA (${params.period})`,
+            params,
+            values: calculateSMA(prices, params.period)
+          };
+          break;
+        case 'ema':
+          newValues['ema'] = {
+            name: 'ema',
+            displayName: `EMA (${params.period})`,
+            params,
+            values: calculateEMA(prices, params.period)
+          };
+          break;
+        case 'rsi':
+          newValues['rsi'] = {
+            name: 'rsi',
+            displayName: `RSI (${params.period})`,
+            params,
+            values: calculateRSI(prices, params.period)
+          };
+          break;
+        case 'macd':
+          const macdResult = calculateMACD(prices, params.fast, params.slow, params.signal);
+          newValues['macd'] = {
+            name: 'macd',
+            displayName: `MACD (${params.fast},${params.slow},${params.signal})`,
+            params,
+            values: macdResult.macd
+          };
+          break;
+        case 'bb':
+          const bbResult = calculateBollingerBands(prices, params.period, params.stdDev);
+          newValues['bb'] = {
+            name: 'bb',
+            displayName: `Bollinger Bands (${params.period}, ${params.stdDev})`,
+            params,
+            values: bbResult.middle
+          };
+          break;
+      }
+    });
+
+    setIndicatorValues(newValues);
+  }, [historicalData, activeIndicators, indicatorParams]);
 
   if (loading) {
     return (
@@ -310,6 +507,72 @@ export default function MarketPage() {
                   ))}
                 </div>
 
+                {/* Technical Indicators Controls */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-gray-700">Technical Indicators</h3>
+                    <button
+                      onClick={() => setShowIndicatorModal(!showIndicatorModal)}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      + Add Indicator
+                    </button>
+                  </div>
+
+                  {/* Active Indicators */}
+                  {activeIndicators.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {activeIndicators.map(indicatorId => {
+                        const indicator = INDICATOR_OPTIONS.find(i => i.id === indicatorId);
+                        const values = indicatorValues[indicatorId];
+                        return (
+                          <div
+                            key={indicatorId}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm"
+                          >
+                            <span>{values?.displayName || indicator?.name}</span>
+                            <button
+                              onClick={() => toggleIndicator(indicatorId)}
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Indicator Selection Modal */}
+                  {showIndicatorModal && (
+                    <div className="absolute z-10 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg">
+                      <div className="p-3 border-b border-gray-100">
+                        <h4 className="font-medium text-gray-900">Add Technical Indicator</h4>
+                      </div>
+                      <div className="p-2">
+                        {INDICATOR_OPTIONS.map(indicator => (
+                          <button
+                            key={indicator.id}
+                            onClick={() => toggleIndicator(indicator.id)}
+                            className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                              activeIndicators.includes(indicator.id)
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'hover:bg-gray-50 text-gray-700'
+                            }`}
+                          >
+                            <div className="font-medium">{indicator.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {indicator.type === 'overlay' ? 'Overlay on chart' : 'Separate panel'}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Chart Placeholder */}
                 <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
                   <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,7 +580,75 @@ export default function MarketPage() {
                   </svg>
                   <p>Historical data: {historicalData.length} data points</p>
                   <p className="text-sm">Chart visualization coming soon</p>
+
+                  {/* Indicator Values Display */}
+                  {Object.keys(indicatorValues).length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Current Indicator Values:</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {Object.entries(indicatorValues).map(([id, indicator]) => {
+                          const lastValue = indicator.values.filter(v => !isNaN(v)).pop();
+                          return (
+                            <div key={id} className="bg-white p-2 rounded border">
+                              <span className="text-gray-600">{indicator.displayName}:</span>
+                              <span className="ml-1 font-medium text-gray-900">
+                                {lastValue !== undefined ? lastValue.toFixed(2) : 'N/A'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* RSI Panel */}
+                {activeIndicators.includes('rsi') && indicatorValues['rsi'] && (
+                  <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium text-gray-700">
+                        {indicatorValues['rsi'].displayName}
+                      </h4>
+                      <span className="text-sm font-bold">
+                        {(() => {
+                          const lastValue = indicatorValues['rsi'].values.filter((v: number) => !isNaN(v)).pop();
+                          if (lastValue === undefined) return 'N/A';
+                          const color = lastValue > 70 ? 'text-red-600' : lastValue < 30 ? 'text-green-600' : 'text-gray-900';
+                          return <span className={color}>{lastValue.toFixed(2)}</span>;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="h-16 bg-gray-50 rounded relative">
+                      <div className="absolute top-0 left-0 right-0 h-1/3 bg-red-100 opacity-30"></div>
+                      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-green-100 opacity-30"></div>
+                      <div className="absolute top-1/3 left-0 right-0 border-t border-dashed border-gray-300"></div>
+                      <div className="absolute top-2/3 left-0 right-0 border-t border-dashed border-gray-300"></div>
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-400">
+                        Overbought {'>'} 70 | Oversold {'<'} 30
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MACD Panel */}
+                {activeIndicators.includes('macd') && indicatorValues['macd'] && (
+                  <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium text-gray-700">
+                        {indicatorValues['macd'].displayName}
+                      </h4>
+                      <div className="text-sm">
+                        <span className="text-gray-600 mr-2">MACD:</span>
+                        <span className="font-bold">
+                          {indicatorValues['macd'].values.filter((v: number) => !isNaN(v)).pop()?.toFixed(2) || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-16 bg-gray-50 rounded flex items-center justify-center text-xs text-gray-400">
+                      MACD histogram visualization
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

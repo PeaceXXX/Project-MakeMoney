@@ -316,7 +316,7 @@
         "Verify indicator is no longer displayed"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-004",
