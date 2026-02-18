@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -11,6 +11,32 @@ interface PasswordForm {
   confirmPassword: string;
 }
 
+interface ProfileForm {
+  displayName: string;
+  email: string;
+  bio: string;
+}
+
+// Common timezones
+const TIMEZONES = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HT)' },
+  { value: 'Europe/London', label: 'London (GMT)' },
+  { value: 'Europe/Paris', label: 'Paris (CET)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+  { value: 'Asia/Hong_Kong', label: 'Hong Kong (HKT)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+];
+
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
@@ -18,11 +44,44 @@ export default function SettingsPage() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [profileForm, setProfileForm] = useState<ProfileForm>({
+    displayName: '',
+    email: '',
+    bio: ''
+  });
+  const [timezone, setTimezone] = useState('UTC');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
+  const [profileChanged, setProfileChanged] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+  // Load saved settings on mount
+  useEffect(() => {
+    const savedTimezone = localStorage.getItem('timezone');
+    if (savedTimezone) {
+      setTimezone(savedTimezone);
+    } else {
+      // Try to detect user's timezone
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (detectedTimezone) {
+        setTimezone(detectedTimezone);
+      }
+    }
+
+    // Load profile data
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        setProfileForm(profile);
+      } catch (e) {
+        // Invalid JSON, use defaults
+      }
+    }
+  }, []);
 
   const validatePasswordForm = (): boolean => {
     const newErrors: string[] = [];
@@ -90,6 +149,31 @@ export default function SettingsPage() {
     }
   };
 
+  const handleProfileChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProfileSubmitting(true);
+    setProfileChanged(false);
+
+    try {
+      // Save to localStorage (in real app, this would be an API call)
+      localStorage.setItem('userProfile', JSON.stringify(profileForm));
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setProfileChanged(true);
+    } catch (error: any) {
+      setErrors(['Failed to update profile. Please try again.']);
+    } finally {
+      setIsProfileSubmitting(false);
+    }
+  };
+
+  const handleTimezoneChange = (newTimezone: string) => {
+    setTimezone(newTimezone);
+    localStorage.setItem('timezone', newTimezone);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -97,6 +181,131 @@ export default function SettingsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Account Settings</h1>
           <p className="text-gray-600 dark:text-gray-400">Manage your account preferences and security settings</p>
+        </div>
+
+        {/* Profile Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6 transition-colors duration-200">
+          <div className="flex items-center mb-6">
+            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg mr-4">
+              <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Profile Information</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Update your personal information</p>
+            </div>
+          </div>
+
+          {/* Profile Success Message */}
+          {profileChanged && (
+            <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 0l-2 2a1 1 0 000 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-green-800 dark:text-green-300 font-medium">Profile updated successfully!</span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleProfileChange} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
+              <input
+                type="text"
+                value={profileForm.displayName}
+                onChange={(e) => setProfileForm({...profileForm, displayName: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder="Enter your display name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input
+                type="email"
+                value={profileForm.email}
+                onChange={(e) => setProfileForm({...profileForm, email: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder="Enter your email"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+              <textarea
+                value={profileForm.bio}
+                onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none"
+                placeholder="Tell us about yourself"
+                rows={3}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isProfileSubmitting}
+              className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {isProfileSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Save Profile</span>
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Timezone Settings Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6 transition-colors duration-200">
+          <div className="flex items-center mb-6">
+            <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg mr-4">
+              <svg className="h-6 w-6 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Time Zone</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Set your local time zone for accurate timestamps</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Time Zone</label>
+              <select
+                value={timezone}
+                onChange={(e) => handleTimezoneChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <svg className="h-5 w-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm text-indigo-800 dark:text-indigo-300">
+                  Current time: {new Date().toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Theme Settings Section */}
