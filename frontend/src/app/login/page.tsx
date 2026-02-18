@@ -14,6 +14,9 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [show2FA, setShow2FA] = useState(false)
+  const [twoFACode, setTwoFACode] = useState('')
+  const [pendingToken, setPendingToken] = useState('')
 
   // Check for redirect parameter after email verification
   useEffect(() => {
@@ -66,6 +69,14 @@ export default function LoginPage() {
       })
 
       if (response.data.access_token) {
+        // Check if 2FA is required
+        if (response.data.requires_2fa) {
+          setPendingToken(response.data.temp_token || '')
+          setShow2FA(true)
+          setIsLoading(false)
+          return
+        }
+
         // Store token
         localStorage.setItem('access_token', response.data.access_token)
 
@@ -90,16 +101,58 @@ export default function LoginPage() {
     }
   }
 
+  const handle2FASubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrors({})
+
+    if (twoFACode.length !== 6) {
+      setErrors({ twoFA: 'Please enter a 6-digit code' })
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await api.post('/api/v1/auth/2fa/verify-login', {
+        temp_token: pendingToken,
+        code: twoFACode,
+      })
+
+      if (response.data.access_token) {
+        // Store token
+        localStorage.setItem('access_token', response.data.access_token)
+
+        // Store remember me preference
+        if (formData.rememberMe) {
+          localStorage.setItem('remember_me', 'true')
+        } else {
+          localStorage.removeItem('remember_me')
+        }
+
+        // Redirect to home
+        router.push('/')
+      }
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        setErrors({ twoFA: error.response.data.detail })
+      } else {
+        setErrors({ twoFA: 'Invalid verification code. Please try again.' })
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-md w-full">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome Back
+              {show2FA ? 'Two-Factor Authentication' : 'Welcome Back'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Sign in to your account
+              {show2FA ? 'Enter your verification code' : 'Sign in to your account'}
             </p>
           </div>
 
@@ -113,7 +166,76 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {show2FA ? (
+            // 2FA Verification Form
+            <form onSubmit={handle2FASubmit} className="space-y-6">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg mb-4">
+                <div className="flex items-center justify-center mb-3">
+                  <svg className="h-8 w-8 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <p className="text-sm text-purple-700 dark:text-purple-300 text-center">
+                  Enter the 6-digit code from your authenticator app
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="twoFACode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  id="twoFACode"
+                  name="twoFACode"
+                  type="text"
+                  value={twoFACode}
+                  onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white text-center text-2xl tracking-widest font-mono transition-all ${
+                    errors.twoFA ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-purple-500'
+                  }`}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoFocus
+                />
+                {errors.twoFA && (
+                  <p className="text-red-500 text-sm mt-1 text-center">{errors.twoFA}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || twoFACode.length !== 6}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12c0-2.21.804-4.23 2.135-5.77l-.01-.01-.012-.01A7.94 7.94 0 0112 4v8h4v4h4v-4h4v8h-4v4H8v-4H4v-3.709z"></path>
+                    </svg>
+                    Verifying...
+                  </>
+                ) : (
+                  'Verify'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShow2FA(false)
+                  setTwoFACode('')
+                  setPendingToken('')
+                  setErrors({})
+                }}
+                className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-colors"
+              >
+                Back to Login
+              </button>
+            </form>
+          ) : (
+            // Regular Login Form
+            <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email Address
@@ -209,7 +331,9 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          )}
 
+          {!show2FA && (
           <div className="mt-6 space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -246,6 +370,7 @@ export default function LoginPage() {
               </a>
             </div>
           </div>
+          )}
         </div>
 
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
