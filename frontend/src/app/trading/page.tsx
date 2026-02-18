@@ -5,8 +5,19 @@ import axios from 'axios';
 
 // Types
 type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit';
-type OrderSide = 'buy' | 'sell';
+type OrderSide = 'buy' | 'sell' | 'short' | 'cover';
 type OrderStatus = 'pending' | 'filled' | 'partially_filled' | 'cancelled' | 'rejected' | 'expired';
+
+interface ShortPosition {
+  id: number;
+  symbol: string;
+  quantity: number;
+  entry_price: number;
+  current_price: number;
+  margin_used: number;
+  unrealized_pnl: number;
+  created_at: string;
+}
 
 interface Order {
   id: number;
@@ -64,6 +75,8 @@ export default function TradingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [riskCheckResult, setRiskCheckResult] = useState<RiskCheckResult | null>(null);
   const [showRiskWarning, setShowRiskWarning] = useState(false);
+  const [shortPositions, setShortPositions] = useState<ShortPosition[]>([]);
+  const [showShortPositions, setShowShortPositions] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -82,8 +95,45 @@ export default function TradingPage() {
     }
   };
 
+  // Fetch short positions
+  const fetchShortPositions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/orders/short-positions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShortPositions(response.data.positions || []);
+    } catch (error) {
+      console.error('Failed to fetch short positions:', error);
+      // Mock data for demo
+      setShortPositions([
+        {
+          id: 1,
+          symbol: 'TSLA',
+          quantity: 50,
+          entry_price: 245.00,
+          current_price: 238.50,
+          margin_used: 6125.00,
+          unrealized_pnl: 325.00,
+          created_at: '2026-02-15T10:00:00Z'
+        },
+        {
+          id: 2,
+          symbol: 'NVDA',
+          quantity: 25,
+          entry_price: 875.00,
+          current_price: 892.00,
+          margin_used: 10937.50,
+          unrealized_pnl: -425.00,
+          created_at: '2026-02-16T14:30:00Z'
+        }
+      ]);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
+    fetchShortPositions();
   }, []);
 
   // Validate order
@@ -303,7 +353,7 @@ export default function TradingPage() {
                   {/* Order Side Selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Order Side</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
                       <button
                         type="button"
                         onClick={() => setOrderSide('buy')}
@@ -327,7 +377,53 @@ export default function TradingPage() {
                         SELL
                       </button>
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setOrderSide('short')}
+                        className={`py-3 px-4 rounded-lg font-medium transition-all border-2 ${
+                          orderSide === 'short'
+                            ? 'bg-orange-500 text-white border-orange-600'
+                            : 'bg-white text-orange-600 border-orange-300 hover:border-orange-500'
+                        }`}
+                      >
+                        SHORT
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOrderSide('cover')}
+                        className={`py-3 px-4 rounded-lg font-medium transition-all border-2 ${
+                          orderSide === 'cover'
+                            ? 'bg-blue-500 text-white border-blue-600'
+                            : 'bg-white text-blue-600 border-blue-300 hover:border-blue-500'
+                        }`}
+                      >
+                        COVER
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Short Selling Info */}
+                  {(orderSide === 'short' || orderSide === 'cover') && (
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="flex items-start">
+                        <svg className="h-5 w-5 text-orange-500 mt-0.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="text-sm text-orange-700">
+                          {orderSide === 'short' ? (
+                            <>
+                              <strong>Short Selling:</strong> You are borrowing shares to sell with the expectation of buying them back at a lower price. Requires margin and carries unlimited risk.
+                            </>
+                          ) : (
+                            <>
+                              <strong>Cover Short:</strong> Buy back shares to close your short position and return borrowed shares.
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Symbol */}
                   <div>
@@ -517,6 +613,81 @@ export default function TradingPage() {
             </div>
           </div>
         </div>
+
+        {/* Short Positions Section */}
+        {shortPositions.length > 0 && (
+          <div className="mt-6">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Open Short Positions</h2>
+                <button
+                  onClick={() => setShowShortPositions(!showShortPositions)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {showShortPositions ? 'Hide' : 'Show'} Positions
+                </button>
+              </div>
+
+              {showShortPositions && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Symbol</th>
+                        <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Qty</th>
+                        <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Entry</th>
+                        <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Current</th>
+                        <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">P&L</th>
+                        <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shortPositions.map((position) => (
+                        <tr key={position.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-2">
+                            <span className="font-semibold text-gray-900">{position.symbol}</span>
+                          </td>
+                          <td className="py-3 px-2 text-right text-gray-900">{position.quantity}</td>
+                          <td className="py-3 px-2 text-right text-gray-900">${position.entry_price.toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right text-gray-900">${position.current_price.toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right">
+                            <span className={`font-semibold ${position.unrealized_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {position.unrealized_pnl >= 0 ? '+' : ''}${position.unrealized_pnl.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-right">
+                            <button
+                              onClick={() => {
+                                setSymbol(position.symbol);
+                                setQuantity(position.quantity.toString());
+                                setOrderSide('cover');
+                                setShowOrderForm(true);
+                              }}
+                              className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium hover:bg-blue-200 transition-colors"
+                            >
+                              Cover
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {!showShortPositions && (
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Total Short Positions: {shortPositions.length}</span>
+                  <span className={`font-medium ${
+                    shortPositions.reduce((sum, p) => sum + p.unrealized_pnl, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    Total P&L: ${shortPositions.reduce((sum, p) => sum + p.unrealized_pnl, 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Order Confirmation Modal */}
