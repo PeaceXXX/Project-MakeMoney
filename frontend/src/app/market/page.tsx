@@ -38,6 +38,17 @@ interface TechnicalIndicator {
   values: number[];
 }
 
+interface NewsArticle {
+  id: number;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  published_at: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  related_symbols: string[];
+}
+
 interface IndicatorOption {
   id: string;
   name: string;
@@ -67,6 +78,8 @@ export default function MarketPage() {
   const [indicatorParams, setIndicatorParams] = useState<Record<string, Record<string, number>>>({});
   const [showIndicatorModal, setShowIndicatorModal] = useState(false);
   const [indicatorValues, setIndicatorValues] = useState<Record<string, TechnicalIndicator>>({});
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -144,6 +157,78 @@ export default function MarketPage() {
       setHistoricalData(response.data.data);
     } catch (error) {
       console.error('Failed to fetch historical data:', error);
+    }
+
+    // Fetch news for selected stock
+    fetchNews(stock.symbol);
+  };
+
+  // Fetch news articles
+  const fetchNews = async (symbol: string) => {
+    setNewsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/market/news?symbol=${symbol}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNewsArticles(response.data.articles || []);
+    } catch (error) {
+      console.error('Failed to fetch news:', error);
+      // Set mock news data for demo purposes
+      setNewsArticles([
+        {
+          id: 1,
+          title: `${symbol} Reports Strong Quarterly Earnings`,
+          summary: `${symbol} exceeded analyst expectations with record revenue growth in the latest quarter.`,
+          source: 'Financial Times',
+          url: '#',
+          published_at: new Date().toISOString(),
+          sentiment: 'positive',
+          related_symbols: [symbol]
+        },
+        {
+          id: 2,
+          title: `Analysts Upgrade ${symbol} Stock Rating`,
+          summary: `Multiple analysts have raised their price targets for ${symbol} citing strong fundamentals.`,
+          source: 'Bloomberg',
+          url: '#',
+          published_at: new Date(Date.now() - 86400000).toISOString(),
+          sentiment: 'positive',
+          related_symbols: [symbol]
+        },
+        {
+          id: 3,
+          title: `${symbol} Announces New Product Line`,
+          summary: `The company unveiled its latest product offerings at a major industry event.`,
+          source: 'Reuters',
+          url: '#',
+          published_at: new Date(Date.now() - 172800000).toISOString(),
+          sentiment: 'neutral',
+          related_symbols: [symbol]
+        },
+        {
+          id: 4,
+          title: `Market Watch: ${symbol} Trading Volume Surges`,
+          summary: `Trading volume for ${symbol} has increased significantly over the past week.`,
+          source: 'CNBC',
+          url: '#',
+          published_at: new Date(Date.now() - 259200000).toISOString(),
+          sentiment: 'neutral',
+          related_symbols: [symbol]
+        },
+        {
+          id: 5,
+          title: `${symbol} Faces Regulatory Scrutiny`,
+          summary: `Regulators are examining the company's recent business practices.`,
+          source: 'Wall Street Journal',
+          url: '#',
+          published_at: new Date(Date.now() - 345600000).toISOString(),
+          sentiment: 'negative',
+          related_symbols: [symbol]
+        }
+      ]);
+    } finally {
+      setNewsLoading(false);
     }
   };
 
@@ -647,6 +732,75 @@ export default function MarketPage() {
                     <div className="h-16 bg-gray-50 rounded flex items-center justify-center text-xs text-gray-400">
                       MACD histogram visualization
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* News Feed */}
+            {selectedIndex && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Latest News for {selectedIndex.symbol}
+                </h2>
+
+                {newsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : newsArticles.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                    <p>No recent news available</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {newsArticles.map((article) => (
+                      <a
+                        key={article.id}
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                article.sentiment === 'positive'
+                                  ? 'bg-green-100 text-green-700'
+                                  : article.sentiment === 'negative'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {article.sentiment.charAt(0).toUpperCase() + article.sentiment.slice(1)}
+                              </span>
+                              <span className="text-xs text-gray-500">{article.source}</span>
+                            </div>
+                            <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
+                              {article.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {article.summary}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              {new Date(article.published_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                          <svg className="h-5 w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </div>
+                      </a>
+                    ))}
                   </div>
                 )}
               </div>

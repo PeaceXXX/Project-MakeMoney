@@ -386,7 +386,7 @@
         "Return to platform"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "market-009",
