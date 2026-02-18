@@ -71,7 +71,7 @@
         "Verify 2FA is enabled"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-006",
