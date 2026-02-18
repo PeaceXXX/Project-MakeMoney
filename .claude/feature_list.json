@@ -249,7 +249,7 @@
         "Verify new portfolio appears in list"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-009",
@@ -262,7 +262,7 @@
         "Verify correct holdings are displayed"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-010",
@@ -1153,7 +1153,7 @@
         "Verify UI updates to light theme"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-002",
