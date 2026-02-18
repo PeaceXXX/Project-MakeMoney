@@ -1125,7 +1125,7 @@
         "Set coverage threshold"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-010",
