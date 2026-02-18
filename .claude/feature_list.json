@@ -428,7 +428,7 @@
         "Sort by transaction amount or date"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "trade-001",

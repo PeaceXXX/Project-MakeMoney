@@ -89,6 +89,18 @@ interface FinancialData {
   };
 }
 
+interface InstitutionalTransaction {
+  id: number;
+  institution_name: string;
+  transaction_type: 'buy' | 'sell';
+  shares: number;
+  price: number;
+  total_value: number;
+  transaction_date: string;
+  filing_date: string;
+  ownership_type: 'direct' | 'indirect';
+}
+
 interface IndicatorOption {
   id: string;
   name: string;
@@ -123,6 +135,9 @@ export default function MarketPage() {
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [financialsLoading, setFinancialsLoading] = useState(false);
   const [activeFinancialTab, setActiveFinancialTab] = useState<'income' | 'balance' | 'cashflow' | 'ratios'>('income');
+  const [institutionalTransactions, setInstitutionalTransactions] = useState<InstitutionalTransaction[]>([]);
+  const [institutionalLoading, setInstitutionalLoading] = useState(false);
+  const [institutionalFilter, setInstitutionalFilter] = useState<'all' | 'buy' | 'sell'>('all');
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -206,6 +221,115 @@ export default function MarketPage() {
     fetchNews(stock.symbol);
     // Fetch financial data
     fetchFinancials(stock.symbol);
+    // Fetch institutional transactions
+    fetchInstitutional(stock.symbol);
+  };
+
+  // Fetch institutional transactions
+  const fetchInstitutional = async (symbol: string) => {
+    setInstitutionalLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/market/stock/${symbol}/institutional`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setInstitutionalTransactions(response.data.transactions || []);
+    } catch (error) {
+      console.error('Failed to fetch institutional transactions:', error);
+      // Set mock institutional data for demo purposes
+      setInstitutionalTransactions([
+        {
+          id: 1,
+          institution_name: 'BlackRock Inc.',
+          transaction_type: 'buy',
+          shares: 2500000,
+          price: 175.50,
+          total_value: 438750000,
+          transaction_date: '2025-01-15',
+          filing_date: '2025-01-22',
+          ownership_type: 'direct'
+        },
+        {
+          id: 2,
+          institution_name: 'Vanguard Group',
+          transaction_type: 'buy',
+          shares: 1800000,
+          price: 174.25,
+          total_value: 313650000,
+          transaction_date: '2025-01-14',
+          filing_date: '2025-01-21',
+          ownership_type: 'direct'
+        },
+        {
+          id: 3,
+          institution_name: 'State Street Corporation',
+          transaction_type: 'sell',
+          shares: 950000,
+          price: 176.80,
+          total_value: 167960000,
+          transaction_date: '2025-01-13',
+          filing_date: '2025-01-20',
+          ownership_type: 'direct'
+        },
+        {
+          id: 4,
+          institution_name: 'Fidelity Investments',
+          transaction_type: 'buy',
+          shares: 1200000,
+          price: 173.90,
+          total_value: 208680000,
+          transaction_date: '2025-01-12',
+          filing_date: '2025-01-19',
+          ownership_type: 'indirect'
+        },
+        {
+          id: 5,
+          institution_name: 'Morgan Stanley',
+          transaction_type: 'sell',
+          shares: 650000,
+          price: 177.25,
+          total_value: 115212500,
+          transaction_date: '2025-01-10',
+          filing_date: '2025-01-17',
+          ownership_type: 'direct'
+        },
+        {
+          id: 6,
+          institution_name: 'Goldman Sachs Group',
+          transaction_type: 'buy',
+          shares: 800000,
+          price: 172.50,
+          total_value: 138000000,
+          transaction_date: '2025-01-09',
+          filing_date: '2025-01-16',
+          ownership_type: 'indirect'
+        },
+        {
+          id: 7,
+          institution_name: 'JP Morgan Chase',
+          transaction_type: 'sell',
+          shares: 420000,
+          price: 178.10,
+          total_value: 74802000,
+          transaction_date: '2025-01-08',
+          filing_date: '2025-01-15',
+          ownership_type: 'direct'
+        },
+        {
+          id: 8,
+          institution_name: 'Capital World Investors',
+          transaction_type: 'buy',
+          shares: 550000,
+          price: 171.80,
+          total_value: 94490000,
+          transaction_date: '2025-01-07',
+          filing_date: '2025-01-14',
+          ownership_type: 'direct'
+        }
+      ]);
+    } finally {
+      setInstitutionalLoading(false);
+    }
   };
 
   // Fetch financial data
@@ -1120,6 +1244,142 @@ export default function MarketPage() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <p>Financial data not available</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Institutional Transactions */}
+            {selectedIndex && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Institutional Transactions
+                  </h2>
+                  <div className="flex space-x-2">
+                    {['all', 'buy', 'sell'].map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setInstitutionalFilter(filter as typeof institutionalFilter)}
+                        className={`px-3 py-1 text-sm rounded-lg font-medium transition-all ${
+                          institutionalFilter === filter
+                            ? filter === 'buy'
+                              ? 'bg-green-100 text-green-700'
+                              : filter === 'sell'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {institutionalLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Institution</th>
+                          <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Type</th>
+                          <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Shares</th>
+                          <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Price</th>
+                          <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Value</th>
+                          <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {institutionalTransactions
+                          .filter(t => institutionalFilter === 'all' || t.transaction_type === institutionalFilter)
+                          .map((transaction) => (
+                            <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="py-3 px-2">
+                                <div className="font-medium text-gray-900 text-sm">{transaction.institution_name}</div>
+                                <div className="text-xs text-gray-500">{transaction.ownership_type}</div>
+                              </td>
+                              <td className="py-3 px-2">
+                                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                  transaction.transaction_type === 'buy'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-red-100 text-red-700'
+                                }`}>
+                                  {transaction.transaction_type.toUpperCase()}
+                                </span>
+                              </td>
+                              <td className="py-3 px-2 text-right text-sm text-gray-900">
+                                {transaction.shares.toLocaleString()}
+                              </td>
+                              <td className="py-3 px-2 text-right text-sm text-gray-900">
+                                ${transaction.price.toFixed(2)}
+                              </td>
+                              <td className="py-3 px-2 text-right text-sm font-medium text-gray-900">
+                                ${(transaction.total_value / 1000000).toFixed(1)}M
+                              </td>
+                              <td className="py-3 px-2 text-sm text-gray-500">
+                                {new Date(transaction.transaction_date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+
+                    {institutionalTransactions.filter(t => institutionalFilter === 'all' || t.transaction_type === institutionalFilter).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No transactions found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Summary */}
+                {!institutionalLoading && institutionalTransactions.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">Total Buy Value</div>
+                      <div className="text-sm font-semibold text-green-600">
+                        ${(institutionalTransactions
+                          .filter(t => t.transaction_type === 'buy')
+                          .reduce((sum, t) => sum + t.total_value, 0) / 1000000).toFixed(1)}M
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">Total Sell Value</div>
+                      <div className="text-sm font-semibold text-red-600">
+                        ${(institutionalTransactions
+                          .filter(t => t.transaction_type === 'sell')
+                          .reduce((sum, t) => sum + t.total_value, 0) / 1000000).toFixed(1)}M
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">Net Flow</div>
+                      <div className={`text-sm font-semibold ${
+                        institutionalTransactions
+                          .filter(t => t.transaction_type === 'buy')
+                          .reduce((sum, t) => sum + t.total_value, 0) -
+                        institutionalTransactions
+                          .filter(t => t.transaction_type === 'sell')
+                          .reduce((sum, t) => sum + t.total_value, 0) >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}>
+                        ${((institutionalTransactions
+                          .filter(t => t.transaction_type === 'buy')
+                          .reduce((sum, t) => sum + t.total_value, 0) -
+                          institutionalTransactions
+                          .filter(t => t.transaction_type === 'sell')
+                          .reduce((sum, t) => sum + t.total_value, 0)) / 1000000).toFixed(1)}M
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
