@@ -139,7 +139,7 @@
         "Verify user profile is created or linked"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "port-001",
