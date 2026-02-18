@@ -1220,7 +1220,7 @@
         "Verify confirmation message"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-007",
