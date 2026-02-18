@@ -1248,7 +1248,7 @@
         "Verify account and data are deleted"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-009",
