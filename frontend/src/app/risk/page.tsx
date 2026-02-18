@@ -48,8 +48,21 @@ export default function RiskPage() {
   const [loading, setLoading] = useState(true);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [positionCalculator, setPositionCalculator] = useState({
+    accountBalance: 100000,
+    riskPercent: 1,
+    entryPrice: 100,
+    stopLossPrice: 95
+  });
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+  const calculatePositionSize = () => {
+    const riskAmount = positionCalculator.accountBalance * (positionCalculator.riskPercent / 100);
+    const stopLossDistance = positionCalculator.entryPrice - positionCalculator.stopLossPrice;
+    if (stopLossDistance <= 0) return 0;
+    return Math.floor(riskAmount / stopLossDistance);
+  };
 
   // Fetch risk metrics
   const fetchRiskMetrics = async () => {
@@ -377,6 +390,85 @@ export default function RiskPage() {
                 <p className="text-sm text-purple-700 dark:text-purple-400 mt-1">
                   Your 1-day VaR is {formatCurrency(metrics?.valueAtRisk || 0)}. Ensure this aligns with your risk tolerance.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Position Sizing Calculator */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mt-6 transition-colors duration-200">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Position Sizing Calculator</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Calculate the optimal position size based on your risk tolerance and stop-loss level.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Balance</label>
+              <input
+                type="number"
+                value={positionCalculator.accountBalance}
+                onChange={(e) => setPositionCalculator({...positionCalculator, accountBalance: parseFloat(e.target.value) || 0})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Risk per Trade (%)</label>
+              <input
+                type="number"
+                step="0.5"
+                min="0.5"
+                max="10"
+                value={positionCalculator.riskPercent}
+                onChange={(e) => setPositionCalculator({...positionCalculator, riskPercent: parseFloat(e.target.value) || 1})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Entry Price</label>
+              <input
+                type="number"
+                step="0.01"
+                value={positionCalculator.entryPrice}
+                onChange={(e) => setPositionCalculator({...positionCalculator, entryPrice: parseFloat(e.target.value) || 0})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stop-Loss Price</label>
+              <input
+                type="number"
+                step="0.01"
+                value={positionCalculator.stopLossPrice}
+                onChange={(e) => setPositionCalculator({...positionCalculator, stopLossPrice: parseFloat(e.target.value) || 0})}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="text-center">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Risk Amount</div>
+              <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(positionCalculator.accountBalance * (positionCalculator.riskPercent / 100))}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Stop-Loss Distance</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">
+                {((positionCalculator.entryPrice - positionCalculator.stopLossPrice) / positionCalculator.entryPrice * 100).toFixed(2)}%
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Recommended Shares</div>
+              <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                {calculatePositionSize()}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Position Value</div>
+              <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                {formatCurrency(calculatePositionSize() * positionCalculator.entryPrice)}
               </div>
             </div>
           </div>

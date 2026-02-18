@@ -768,7 +768,7 @@
         "View recommended quantity"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "risk-004",
