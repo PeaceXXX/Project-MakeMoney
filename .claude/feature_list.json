@@ -1167,7 +1167,7 @@
         "Save changes"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-003",
@@ -1193,7 +1193,7 @@
         "Verify persistence across sessions"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-005",
