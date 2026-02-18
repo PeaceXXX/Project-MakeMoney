@@ -574,7 +574,7 @@
         "Verify order is accepted"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "hist-001",
