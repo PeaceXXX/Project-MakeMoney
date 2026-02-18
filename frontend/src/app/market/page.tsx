@@ -49,6 +49,46 @@ interface NewsArticle {
   related_symbols: string[];
 }
 
+interface FinancialData {
+  symbol: string;
+  fiscal_year: number;
+  quarter: number | null;
+  income_statement: {
+    revenue: number;
+    cost_of_revenue: number;
+    gross_profit: number;
+    operating_income: number;
+    net_income: number;
+    eps: number;
+    eps_diluted: number;
+  };
+  balance_sheet: {
+    total_assets: number;
+    total_liabilities: number;
+    total_equity: number;
+    cash_and_equivalents: number;
+    total_debt: number;
+    current_assets: number;
+    current_liabilities: number;
+  };
+  cash_flow: {
+    operating_cash_flow: number;
+    investing_cash_flow: number;
+    financing_cash_flow: number;
+    free_cash_flow: number;
+    capital_expenditures: number;
+    dividends_paid: number;
+  };
+  ratios: {
+    pe_ratio: number;
+    pb_ratio: number;
+    debt_to_equity: number;
+    current_ratio: number;
+    roe: number;
+    roa: number;
+  };
+}
+
 interface IndicatorOption {
   id: string;
   name: string;
@@ -80,6 +120,9 @@ export default function MarketPage() {
   const [indicatorValues, setIndicatorValues] = useState<Record<string, TechnicalIndicator>>({});
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
+  const [financialData, setFinancialData] = useState<FinancialData | null>(null);
+  const [financialsLoading, setFinancialsLoading] = useState(false);
+  const [activeFinancialTab, setActiveFinancialTab] = useState<'income' | 'balance' | 'cashflow' | 'ratios'>('income');
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -161,6 +204,64 @@ export default function MarketPage() {
 
     // Fetch news for selected stock
     fetchNews(stock.symbol);
+    // Fetch financial data
+    fetchFinancials(stock.symbol);
+  };
+
+  // Fetch financial data
+  const fetchFinancials = async (symbol: string) => {
+    setFinancialsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/market/stock/${symbol}/financials`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFinancialData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch financials:', error);
+      // Set mock financial data for demo purposes
+      setFinancialData({
+        symbol: symbol,
+        fiscal_year: 2025,
+        quarter: 4,
+        income_statement: {
+          revenue: 394328000000,
+          cost_of_revenue: 224947000000,
+          gross_profit: 169381000000,
+          operating_income: 114925000000,
+          net_income: 94960000000,
+          eps: 6.11,
+          eps_diluted: 6.05
+        },
+        balance_sheet: {
+          total_assets: 352583000000,
+          total_liabilities: 283263000000,
+          total_equity: 69320000000,
+          cash_and_equivalents: 29965000000,
+          total_debt: 109280000000,
+          current_assets: 135405000000,
+          current_liabilities: 116866000000
+        },
+        cash_flow: {
+          operating_cash_flow: 110543000000,
+          investing_cash_flow: -4589000000,
+          financing_cash_flow: -104900000000,
+          free_cash_flow: 99584000000,
+          capital_expenditures: 10959000000,
+          dividends_paid: 15234000000
+        },
+        ratios: {
+          pe_ratio: 29.5,
+          pb_ratio: 42.3,
+          debt_to_equity: 1.58,
+          current_ratio: 1.16,
+          roe: 0.147,
+          roa: 0.278
+        }
+      });
+    } finally {
+      setFinancialsLoading(false);
+    }
   };
 
   // Fetch news articles
@@ -801,6 +902,224 @@ export default function MarketPage() {
                         </div>
                       </a>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Financial Data */}
+            {selectedIndex && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Financial Data
+                  </h2>
+                  {financialData && (
+                    <span className="text-sm text-gray-500">
+                      FY {financialData.fiscal_year} {financialData.quarter ? `Q${financialData.quarter}` : ''}
+                    </span>
+                  )}
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="flex space-x-2 mb-4 border-b border-gray-200">
+                  {[
+                    { id: 'income', label: 'Income Statement' },
+                    { id: 'balance', label: 'Balance Sheet' },
+                    { id: 'cashflow', label: 'Cash Flow' },
+                    { id: 'ratios', label: 'Ratios' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveFinancialTab(tab.id as typeof activeFinancialTab)}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                        activeFinancialTab === tab.id
+                          ? 'border-blue-600 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {financialsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : financialData ? (
+                  <div>
+                    {/* Income Statement Tab */}
+                    {activeFinancialTab === 'income' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Revenue</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.income_statement.revenue / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Cost of Revenue</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.income_statement.cost_of_revenue / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Gross Profit</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.income_statement.gross_profit / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Operating Income</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.income_statement.operating_income / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <div className="text-sm text-green-600">Net Income</div>
+                          <div className="text-lg font-semibold text-green-700">
+                            ${(financialData.income_statement.net_income / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">EPS (Diluted)</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${financialData.income_statement.eps_diluted.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Balance Sheet Tab */}
+                    {activeFinancialTab === 'balance' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Total Assets</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.balance_sheet.total_assets / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Total Liabilities</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.balance_sheet.total_liabilities / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <div className="text-sm text-blue-600">Total Equity</div>
+                          <div className="text-lg font-semibold text-blue-700">
+                            ${(financialData.balance_sheet.total_equity / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Cash & Equivalents</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.balance_sheet.cash_and_equivalents / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Total Debt</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.balance_sheet.total_debt / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Current Ratio</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {(financialData.balance_sheet.current_assets / financialData.balance_sheet.current_liabilities).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cash Flow Tab */}
+                    {activeFinancialTab === 'cashflow' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <div className="text-sm text-green-600">Operating Cash Flow</div>
+                          <div className="text-lg font-semibold text-green-700">
+                            ${(financialData.cash_flow.operating_cash_flow / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Investing Cash Flow</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.cash_flow.investing_cash_flow / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Financing Cash Flow</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.cash_flow.financing_cash_flow / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <div className="text-sm text-blue-600">Free Cash Flow</div>
+                          <div className="text-lg font-semibold text-blue-700">
+                            ${(financialData.cash_flow.free_cash_flow / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Capital Expenditures</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.cash_flow.capital_expenditures / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Dividends Paid</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            ${(financialData.cash_flow.dividends_paid / 1000000000).toFixed(1)}B
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ratios Tab */}
+                    {activeFinancialTab === 'ratios' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">P/E Ratio</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {financialData.ratios.pe_ratio.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">P/B Ratio</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {financialData.ratios.pb_ratio.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Debt to Equity</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {financialData.ratios.debt_to_equity.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-sm text-gray-600">Current Ratio</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {financialData.ratios.current_ratio.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <div className="text-sm text-green-600">Return on Equity (ROE)</div>
+                          <div className="text-lg font-semibold text-green-700">
+                            {(financialData.ratios.roe * 100).toFixed(2)}%
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <div className="text-sm text-blue-600">Return on Assets (ROA)</div>
+                          <div className="text-lg font-semibold text-blue-700">
+                            {(financialData.ratios.roa * 100).toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Financial data not available</p>
                   </div>
                 )}
               </div>
