@@ -1206,7 +1206,7 @@
         "View video tutorials"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-006",
