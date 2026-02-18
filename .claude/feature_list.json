@@ -1276,7 +1276,7 @@
         "Run accessibility audit"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     }
   ]
 }
