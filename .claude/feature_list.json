@@ -1111,7 +1111,7 @@
         "Review and fix findings"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-009",
