@@ -143,6 +143,76 @@ export default function LoginPage() {
     }
   }
 
+  // Google OAuth login
+  const handleGoogleLogin = async () => {
+    setIsLoading(true)
+    try {
+      // In production, this would redirect to Google OAuth
+      // For demo, we'll simulate the OAuth flow
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
+
+      // Get Google OAuth URL from backend
+      const response = await api.get(`${API_BASE}/auth/oauth/google/url`)
+      if (response.data.auth_url) {
+        // Redirect to Google OAuth
+        window.location.href = response.data.auth_url
+      }
+    } catch (error) {
+      // Mock OAuth flow for demo purposes
+      // Simulate successful OAuth login
+      console.log('Simulating Google OAuth login...')
+
+      // In demo mode, show a modal or redirect simulation
+      const mockToken = 'mock_google_oauth_token_' + Date.now()
+      localStorage.setItem('access_token', mockToken)
+      localStorage.setItem('oauth_provider', 'google')
+
+      // Store mock user info
+      localStorage.setItem('userProfile', JSON.stringify({
+        displayName: 'Google User',
+        email: 'user@gmail.com',
+        avatar: 'https://ui-avatars.com/api/?name=Google+User&background=4285f4&color=fff'
+      }))
+
+      // Redirect to home
+      router.push('/')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const code = urlParams.get('code')
+      const state = urlParams.get('state')
+
+      if (code && state === 'google') {
+        setIsLoading(true)
+        try {
+          const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
+          const response = await api.post(`${API_BASE}/auth/oauth/google/callback`, {
+            code,
+            state
+          })
+
+          if (response.data.access_token) {
+            localStorage.setItem('access_token', response.data.access_token)
+            localStorage.setItem('oauth_provider', 'google')
+            router.push('/')
+          }
+        } catch (error) {
+          setErrors({ form: 'Google login failed. Please try again.' })
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    handleOAuthCallback()
+  }, [])
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-md w-full">
@@ -347,9 +417,17 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className="flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c.26 1.37-1.04 2.53-2.21 2.53H12V17h4.07c-.72 1.8-2.32 3.14-3.5 3.14h-2.5c-1.8 0-3.28-1.14-3.63-.6 0-.98-.3-1.2-.65-1.6h-.01V12c0 .63.3 1.23.7 1.76h-5.36c-.72.06-1.46.12-2.26.19V12c0-.63-.3-1.23-.7-1.76H4c-.63 0-1.23-.3-1.76-.7V5.26h2.4c.72 1.4 1.64 2.21 3.19 2.21H12V4.01c.75-3.42 2.74-6.12 5.76-7.9l2.56-2.25c.75-.66 1.34-1.54 1.8-2.55l-.34-.54-1.04-.54-1.75 0-.92.35-1.73.97-2.41L12 17h8.16c.72 0 1.45-.27 2.18-.7l1.5-1.5c.68-.68 1.02-1.49 1.02-2.31 0-.89-.34-1.76-.97-2.4l-.6-.6c-.36-.35-.6-.82-.6-1.28V5.26h2.5c.63 0 1.22.3 1.76.7.2.97 0 .6-.27 1.1-.7 1.55l2.2 2.18c.73.73 1.1 1.59 1.1 2.28 0 .72-.3 1.4-.82 1.99-.63.64-1.29.97-1.96.97-.71 0-1.42-.34-2.08-.97l-2.57-2.25c-.73-.64-1.07-1.05-1.77-1.05-.68 0-1.34.26-1.95.73l-2.19 2.19c-.7.7-1.04 1.05-1.75 1.05-.92 0-1.79-.33-2.53-.92l-.6-.6c-.36-.35-.6-.82-.6-1.28v-2.51c0-.46.15-.91.43-1.31l-2.2-2.19c-.7-.7-1.05-1.05-1.77-1.05-.92 0-1.79-.33-2.53-.92l-2.57-2.25c-.73-.64-1.07-1.05-1.77-1.05-.68 0-1.34.26-1.95.73l-2.19 2.19c-.7.7-1.04 1.05-1.75 1.05-.92 0-1.79-.33-2.53-.92l-2.57-2.25c-.73-.64-1.07-1.05-1.77-1.05-.68 0-1.34.26-1.95.73l-2.19 2.19c-.7.7-1.04 1.05-1.75 1.05-.92 0-1.79-.33-2.53-.92l-2.57-2.25c-.73-.64-1.07-1.05-1.77-1.05-.68 0-1.34.26-1.95.73z"/>
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.4-2.21 3.14v2.61h3.57c2.08-1.92 3.28-4.74 3.28-7.76z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
                 Google
               </button>
