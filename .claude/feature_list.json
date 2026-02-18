@@ -1234,7 +1234,7 @@
         "View earned rewards"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-008",
