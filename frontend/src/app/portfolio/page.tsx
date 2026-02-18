@@ -431,6 +431,44 @@ export default function PortfolioPage() {
                   </div>
                 </div>
 
+                {/* Rebalancing Suggestions */}
+                <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+                  <div className="flex items-center mb-4">
+                    <svg className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Rebalancing Suggestions</h3>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                    Based on your target allocation, here are recommended adjustments to balance your portfolio:
+                  </p>
+                  <div className="space-y-3">
+                    {holdings.slice(0, 3).map((holding, index) => {
+                      const currentWeight = (holding.quantity * holding.purchase_price) / calculateTotalValue() * 100;
+                      const targetWeight = 20 - (index * 5);
+                      const diff = currentWeight - targetWeight;
+                      return (
+                        <div key={holding.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <span className="font-medium text-gray-900 dark:text-white">{holding.symbol}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              Current: {currentWeight.toFixed(1)}% | Target: {targetWeight}%
+                            </span>
+                          </div>
+                          <div className={`text-sm font-medium ${diff > 5 ? 'text-red-600 dark:text-red-400' : diff < -5 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                            {diff > 5 ? `Sell ${((diff - 5) * calculateTotalValue() / 100 / holding.purchase_price).toFixed(0)} shares` :
+                             diff < -5 ? `Buy ${((-diff - 5) * calculateTotalValue() / 100 / holding.purchase_price).toFixed(0)} shares` :
+                             'On target'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button className="mt-4 w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors">
+                    Apply Rebalancing
+                  </button>
+                </div>
+
                 {/* Delete Portfolio Button */}
                 <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
                   <button
