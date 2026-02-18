@@ -84,7 +84,7 @@
         "Verify session is authenticated"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-007",
