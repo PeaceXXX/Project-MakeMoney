@@ -575,6 +575,60 @@ export default function SettingsPage() {
             </li>
           </ul>
         </div>
+
+        {/* Danger Zone - Account Deletion */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border-2 border-red-200 dark:border-red-900/50 transition-colors duration-200">
+          <div className="flex items-center mb-4">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg mr-4">
+              <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Danger Zone</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Irreversible actions</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg mb-4">
+            <h3 className="font-medium text-red-900 dark:text-red-300 mb-2">Delete Account</h3>
+            <p className="text-sm text-red-700 dark:text-red-400 mb-4">
+              Once you delete your account, there is no going back. All your data, including portfolios, order history, and preferences will be permanently deleted.
+            </p>
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to delete your account? This action cannot be undone. You will receive a confirmation email to complete this action.')) {
+                  // In a real app, this would trigger an API call
+                  alert('A confirmation email has been sent. Please check your inbox to complete account deletion.');
+                }
+              }}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Request Account Deletion
+            </button>
+          </div>
+
+          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <li className="flex items-start">
+              <svg className="h-4 w-4 text-red-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>All portfolio data will be permanently deleted</span>
+            </li>
+            <li className="flex items-start">
+              <svg className="h-4 w-4 text-red-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>Order history and transaction records will be lost</span>
+            </li>
+            <li className="flex items-start">
+              <svg className="h-4 w-4 text-red-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>Any pending orders or withdrawals will be cancelled</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
