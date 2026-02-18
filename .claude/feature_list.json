@@ -1097,7 +1097,7 @@
         "Generate performance report"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-008",
