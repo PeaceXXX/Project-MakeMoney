@@ -1180,7 +1180,7 @@
         "Verify persistence across sessions"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "misc-004",

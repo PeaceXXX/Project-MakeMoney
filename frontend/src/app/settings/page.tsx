@@ -37,6 +37,18 @@ const TIMEZONES = [
   { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
 ];
 
+// Supported languages
+const LANGUAGES = [
+  { value: 'en', label: 'English', flag: '🇺🇸' },
+  { value: 'zh', label: '中文', flag: '🇨🇳' },
+  { value: 'ja', label: '日本語', flag: '🇯🇵' },
+  { value: 'ko', label: '한국어', flag: '🇰🇷' },
+  { value: 'es', label: 'Español', flag: '🇪🇸' },
+  { value: 'fr', label: 'Français', flag: '🇫🇷' },
+  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { value: 'pt', label: 'Português', flag: '🇧🇷' },
+];
+
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
@@ -50,6 +62,7 @@ export default function SettingsPage() {
     bio: ''
   });
   const [timezone, setTimezone] = useState('UTC');
+  const [language, setLanguage] = useState('en');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
@@ -68,6 +81,18 @@ export default function SettingsPage() {
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (detectedTimezone) {
         setTimezone(detectedTimezone);
+      }
+    }
+
+    // Load saved language
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+    } else {
+      // Try to detect user's language
+      const browserLang = navigator.language.split('-')[0];
+      if (LANGUAGES.some(l => l.value === browserLang)) {
+        setLanguage(browserLang);
       }
     }
 
@@ -172,6 +197,11 @@ export default function SettingsPage() {
   const handleTimezoneChange = (newTimezone: string) => {
     setTimezone(newTimezone);
     localStorage.setItem('timezone', newTimezone);
+  };
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
   };
 
   return (
@@ -302,6 +332,49 @@ export default function SettingsPage() {
                 </svg>
                 <span className="text-sm text-indigo-800 dark:text-indigo-300">
                   Current time: {new Date().toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Language Settings Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6 transition-colors duration-200">
+          <div className="flex items-center mb-6">
+            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg mr-4">
+              <svg className="h-6 w-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Language</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Select your preferred language</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Language</label>
+              <select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.flag} {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm text-orange-800 dark:text-orange-300">
+                  Selected: {LANGUAGES.find(l => l.value === language)?.flag} {LANGUAGES.find(l => l.value === language)?.label}
                 </span>
               </div>
             </div>
