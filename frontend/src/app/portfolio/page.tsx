@@ -1,15 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import type { Portfolio, Holding } from '@/types'
 import MainNav from '@/components/MainNav'
+import axios from 'axios'
 
 interface CreatePortfolioForm {
   name: string;
   description: string;
+}
+
+interface RealtimeQuote {
+  symbol: string;
+  current_price: number;
+  change: number;
+  change_percent: number;
+  is_market_open: boolean;
 }
 
 export default function PortfolioPage() {
@@ -23,6 +32,13 @@ export default function PortfolioPage() {
   const [createForm, setCreateForm] = useState<CreatePortfolioForm>({ name: '', description: '' })
   const [isCreating, setIsCreating] = useState(false)
 
+  // Real-time data state
+  const [realtimeQuotes, setRealtimeQuotes] = useState<Record<string, RealtimeQuote>>({})
+  const [isMarketOpen, setIsMarketOpen] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'
+
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (!token) {
@@ -30,7 +46,52 @@ export default function PortfolioPage() {
       return
     }
     fetchPortfolios(token)
+    fetchMarketStatus()
   }, [])
+
+  // Real-time polling during market hours
+  useEffect(() => {
+    if (!isMarketOpen || holdings.length === 0) return
+
+    const pollInterval = setInterval(() => {
+      fetchRealtimeQuotes()
+    }, 10000)
+
+    return () => clearInterval(pollInterval)
+  }, [isMarketOpen, holdings])
+
+  const fetchMarketStatus = async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      const response = await axios.get(`${API_BASE}/market/realtime/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setIsMarketOpen(response.data.is_market_open)
+    } catch (error) {
+      console.error('Failed to fetch market status:', error)
+    }
+  }
+
+  const fetchRealtimeQuotes = async () => {
+    if (holdings.length === 0) return
+
+    const token = localStorage.getItem('access_token')
+    const quotes: Record<string, RealtimeQuote> = {}
+
+    for (const holding of holdings) {
+      try {
+        const response = await axios.get(`${API_BASE}/market/realtime/${holding.symbol}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        quotes[holding.symbol] = response.data
+      } catch (err) {
+        console.error(`Failed to fetch quote for ${holding.symbol}:`, err)
+      }
+    }
+
+    setRealtimeQuotes(quotes)
+    setLastUpdated(new Date().toLocaleTimeString())
+  }
 
   const fetchPortfolios = async (token: string) => {
     setIsLoading(true)
@@ -52,6 +113,8 @@ export default function PortfolioPage() {
     try {
       const response = await api.get(`/api/v1/portfolio/${portfolioId}/holdings`)
       setHoldings(response.data)
+      // Fetch real-time quotes after holdings are loaded
+      setTimeout(() => fetchRealtimeQuotes(), 100)
     } catch (err: any) {
       if (err.response?.status === 401) {
         router.push('/login')

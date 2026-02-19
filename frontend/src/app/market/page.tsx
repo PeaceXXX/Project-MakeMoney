@@ -164,7 +164,7 @@ export default function MarketPage() {
   useEffect(() => {
     if (!isMarketOpen) return;
 
-    // Poll for real-time data every 5 seconds during market hours
+    // Poll for real-time data every 10 seconds during market hours
     const pollInterval = setInterval(() => {
       fetchRealtimeMarketIndices();
       if (selectedIndex) {
@@ -174,7 +174,7 @@ export default function MarketPage() {
       watchlist.forEach(item => {
         fetchRealtimeQuote(item.stock.symbol);
       });
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(pollInterval);
   }, [isMarketOpen, selectedIndex, watchlist]);

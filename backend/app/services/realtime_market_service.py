@@ -5,26 +5,28 @@ Provides live stock quotes during market hours and last close data after hours.
 from datetime import datetime, time
 from typing import Optional, Dict, Any, List
 import yfinance as yf
+import pytz
 
 
 def is_market_open() -> bool:
     """
     Check if the US stock market is currently open.
 
-    Market hours: Monday-Friday, 9:30 AM - 4:00 PM ET
+    Market hours: Monday-Friday, 9:30 AM - 4:00 PM Eastern Time
     Note: This is a simplified check and doesn't account for holidays.
     """
-    now = datetime.now()
+    # Get current time in US Eastern timezone
+    eastern = pytz.timezone('US/Eastern')
+    now_et = datetime.now(eastern)
 
     # Check if it's a weekday (Monday=0, Friday=4)
-    if now.weekday() >= 5:
+    if now_et.weekday() >= 5:
         return False
 
     # Market hours: 9:30 AM - 4:00 PM ET
-    # Using UTC for simplicity (adjust based on your server timezone)
     market_open = time(9, 30)
     market_close = time(16, 0)
-    current_time = now.time()
+    current_time = now_et.time()
 
     return market_open <= current_time <= market_close
 

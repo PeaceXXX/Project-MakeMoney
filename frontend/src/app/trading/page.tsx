@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import MainNav from '@/components/MainNav';
 
@@ -58,6 +58,15 @@ interface RiskCheckResult {
   };
 }
 
+interface RealtimeQuote {
+  symbol: string;
+  name: string;
+  current_price: number;
+  change: number;
+  change_percent: number;
+  is_market_open: boolean;
+}
+
 export default function TradingPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +88,12 @@ export default function TradingPage() {
   const [shortPositions, setShortPositions] = useState<ShortPosition[]>([]);
   const [showShortPositions, setShowShortPositions] = useState(false);
 
+  // Real-time data state
+  const [currentQuote, setCurrentQuote] = useState<RealtimeQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
   useEffect(() => {
@@ -89,7 +104,65 @@ export default function TradingPage() {
     }
     fetchOrders();
     fetchShortPositions();
+    fetchMarketStatus();
   }, []);
+
+  // Fetch market status
+  const fetchMarketStatus = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE}/market/realtime/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsMarketOpen(response.data.is_market_open);
+    } catch (error) {
+      console.error('Failed to fetch market status:', error);
+    }
+  };
+
+  // Fetch real-time quote for symbol
+  const fetchRealtimeQuote = useCallback(async (sym: string) => {
+    if (!sym || sym.length < 1) {
+      setCurrentQuote(null);
+      return;
+    }
+
+    setQuoteLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE}/market/realtime/${sym.toUpperCase()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentQuote(response.data);
+      setLastUpdated(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Failed to fetch quote:', error);
+      setCurrentQuote(null);
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, [API_BASE]);
+
+  // Fetch quote when symbol changes
+  useEffect(() => {
+    if (symbol && symbol.length >= 1) {
+      const debounceTimer = setTimeout(() => {
+        fetchRealtimeQuote(symbol);
+      }, 500);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [symbol, fetchRealtimeQuote]);
+
+  // Poll for real-time quote during market hours
+  useEffect(() => {
+    if (!isMarketOpen || !symbol || !currentQuote) return;
+
+    const pollInterval = setInterval(() => {
+      fetchRealtimeQuote(symbol);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [isMarketOpen, symbol, currentQuote, fetchRealtimeQuote]);
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -443,6 +516,37 @@ export default function TradingPage() {
                       placeholder="AAPL"
                       required
                     />
+                    {/* Real-time Quote Display */}
+                    {currentQuote && (
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{currentQuote.name}</p>
+                            <p className="text-2xl font-bold text-gray-900">${currentQuote.current_price.toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-medium ${currentQuote.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {currentQuote.change >= 0 ? '+' : ''}{currentQuote.change.toFixed(2)}
+                            </p>
+                            <p className={`text-sm ${currentQuote.change_percent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ({currentQuote.change_percent >= 0 ? '+' : ''}{currentQuote.change_percent.toFixed(2)}%)
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                          <span className={`flex items-center ${isMarketOpen ? 'text-green-600' : 'text-gray-500'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full mr-1 ${isMarketOpen ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                            {isMarketOpen ? 'Market Open' : 'Market Closed'}
+                          </span>
+                          {lastUpdated && <span>Updated: {lastUpdated}</span>}
+                        </div>
+                      </div>
+                    )}
+                    {quoteLoading && (
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">Loading quote...</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Order Type */}

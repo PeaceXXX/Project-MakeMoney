@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -29,11 +29,22 @@ interface Position {
   gainPercent: number;
 }
 
+interface RealtimeQuote {
+  symbol: string;
+  current_price: number;
+  change: number;
+  change_percent: number;
+  is_market_open: boolean;
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [data, setData] = useState<DashboardData | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
+  const [realtimeQuotes, setRealtimeQuotes] = useState<Record<string, RealtimeQuote>>({});
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -44,7 +55,73 @@ export default function DashboardPage() {
       return
     }
     fetchDashboardData();
+    fetchMarketStatus();
   }, []);
+
+  // Real-time polling during market hours
+  useEffect(() => {
+    if (!isMarketOpen) return;
+
+    const pollInterval = setInterval(() => {
+      fetchRealtimeQuotes();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [isMarketOpen, positions]);
+
+  const fetchMarketStatus = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE}/market/realtime/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsMarketOpen(response.data.is_market_open);
+    } catch (error) {
+      console.error('Failed to fetch market status:', error);
+    }
+  };
+
+  const fetchRealtimeQuotes = async () => {
+    if (positions.length === 0) return;
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const symbols = positions.map(p => p.symbol);
+
+      const quotes: Record<string, RealtimeQuote> = {};
+      for (const symbol of symbols) {
+        try {
+          const response = await axios.get(`${API_BASE}/market/realtime/${symbol}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          quotes[symbol] = response.data;
+        } catch (err) {
+          console.error(`Failed to fetch quote for ${symbol}:`, err);
+        }
+      }
+
+      setRealtimeQuotes(quotes);
+      setLastUpdated(new Date().toLocaleTimeString());
+
+      // Update positions with real-time prices
+      setPositions(prev => prev.map(pos => {
+        const quote = quotes[pos.symbol];
+        if (quote) {
+          const newValue = quote.current_price * pos.shares;
+          const cost = pos.avgCost * pos.shares;
+          return {
+            ...pos,
+            currentPrice: quote.current_price,
+            gain: newValue - cost,
+            gainPercent: ((quote.current_price - pos.avgCost) / pos.avgCost) * 100
+          };
+        }
+        return pos;
+      }));
+    } catch (error) {
+      console.error('Failed to fetch real-time quotes:', error);
+    }
+  };
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -113,8 +190,32 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's your portfolio overview.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+              <p className="text-gray-600">Welcome back! Here's your portfolio overview.</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              {/* Market Status Indicator */}
+              <div className={`flex items-center px-4 py-2 rounded-full ${
+                isMarketOpen
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                <span className={`w-2 h-2 rounded-full mr-2 ${
+                  isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                }`}></span>
+                <span className="text-sm font-medium">
+                  {isMarketOpen ? 'Market Open' : 'Market Closed'}
+                </span>
+              </div>
+              {lastUpdated && (
+                <span className="text-sm text-gray-500">
+                  Updated: {lastUpdated}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Quick Stats */}
