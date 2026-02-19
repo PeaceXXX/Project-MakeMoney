@@ -1,6 +1,7 @@
 """
 Security utilities for password hashing and JWT token generation.
 """
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -10,14 +11,26 @@ from app.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _prepare_password(password: str) -> str:
+    """
+    Prepare password for bcrypt by pre-hashing with SHA256.
+
+    This ensures the password is always within bcrypt's 72-byte limit,
+    regardless of the original password length.
+    """
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
+    prepared_password = _prepare_password(plain_password)
+    return pwd_context.verify(prepared_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    """Hash a password using SHA256 + bcrypt."""
+    prepared_password = _prepare_password(password)
+    return pwd_context.hash(prepared_password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
