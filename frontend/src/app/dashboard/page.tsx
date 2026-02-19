@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import MainNav from '@/components/MainNav';
 
 // Types
 interface DashboardData {
@@ -28,16 +30,26 @@ interface Position {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [data, setData] = useState<DashboardData | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(true);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+    fetchDashboardData();
+  }, []);
+
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       // Mock implementation - replace with actual API calls
       // const [portfolioRes, positionsRes] = await Promise.all([
       //   axios.get(`${API_BASE}/portfolio/summary`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -71,10 +83,6 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -101,6 +109,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <MainNav />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">

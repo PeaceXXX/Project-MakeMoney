@@ -87,8 +87,8 @@ export default function LoginPage() {
           localStorage.removeItem('remember_me')
         }
 
-        // Redirect to home
-        router.push('/')
+        // Redirect to dashboard
+        router.push('/dashboard')
       }
     } catch (error: any) {
       if (error.response?.data?.detail) {
@@ -129,8 +129,8 @@ export default function LoginPage() {
           localStorage.removeItem('remember_me')
         }
 
-        // Redirect to home
-        router.push('/')
+        // Redirect to dashboard
+        router.push('/dashboard')
       }
     } catch (error: any) {
       if (error.response?.data?.detail) {

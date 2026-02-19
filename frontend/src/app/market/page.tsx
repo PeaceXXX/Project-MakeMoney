@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import MainNav from '@/components/MainNav';
 
 // Types
 interface Stock {
@@ -143,6 +144,11 @@ export default function MarketPage() {
 
   // Fetch market data on mount
   useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      window.location.href = '/login'
+      return
+    }
     fetchMarketIndices();
     fetchWatchlist();
     setLoading(false);
@@ -151,7 +157,7 @@ export default function MarketPage() {
   // Fetch market indices
   const fetchMarketIndices = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/indices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -164,7 +170,7 @@ export default function MarketPage() {
   // Fetch watchlist
   const fetchWatchlist = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/watchlist`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -184,7 +190,7 @@ export default function MarketPage() {
     const debounceTimer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('access_token');
         const response = await axios.get(`${API_BASE}/market/stocks/search?query=${searchQuery}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -207,7 +213,7 @@ export default function MarketPage() {
     setSearchResults([]);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(
         `${API_BASE}/market/stock/${stock.symbol}/history?timeframe=${timeframe}`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -229,7 +235,7 @@ export default function MarketPage() {
   const fetchInstitutional = async (symbol: string) => {
     setInstitutionalLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/stock/${symbol}/institutional`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -336,7 +342,7 @@ export default function MarketPage() {
   const fetchFinancials = async (symbol: string) => {
     setFinancialsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/stock/${symbol}/financials`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -392,7 +398,7 @@ export default function MarketPage() {
   const fetchNews = async (symbol: string) => {
     setNewsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/news?symbol=${symbol}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -460,7 +466,7 @@ export default function MarketPage() {
   // Add to watchlist
   const addToWatchlist = async (stockId: number) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       await axios.post(
         `${API_BASE}/market/watchlist`,
         { stock_id: stockId },
@@ -479,7 +485,7 @@ export default function MarketPage() {
     if (!confirm('Remove from watchlist?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       await axios.delete(`${API_BASE}/market/watchlist/${watchlistId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -686,6 +692,7 @@ export default function MarketPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <MainNav />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
