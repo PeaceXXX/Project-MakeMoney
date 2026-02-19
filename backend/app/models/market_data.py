@@ -4,7 +4,7 @@ Market data models for stocks, market data, and watchlists.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship
-from app.models.user import Base
+from app.core.database import Base
 
 
 class Stock(Base):

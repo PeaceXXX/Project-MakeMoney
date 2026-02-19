@@ -9,6 +9,8 @@ from app.api.deps import get_current_active_user
 from app.schemas.portfolio import PortfolioCreate, PortfolioUpdate, PortfolioResponse, HoldingCreate, HoldingResponse, Message, PerformanceMetrics
 from app.schemas.user import UserResponse
 from app.services.portfolio_service import portfolio_service
+# Import models to ensure SQLAlchemy can resolve relationships
+from app.models import Portfolio, Holding, User
 
 router = APIRouter(prefix="/portfolio", tags=["Portfolio"])
 

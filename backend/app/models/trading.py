@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from app.models.user import Base
+from app.core.database import Base
 
 
 class OrderType(PyEnum):

@@ -5,7 +5,7 @@ import secrets
 from datetime import datetime, timedelta
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from app.models.user import Base
+from app.core.database import Base
 
 
 class APIKey(Base):
