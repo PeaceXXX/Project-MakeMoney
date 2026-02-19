@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import type { Portfolio, Holding } from '@/types'
+import MainNav from '@/components/MainNav'
 
 interface CreatePortfolioForm {
   name: string;
@@ -195,8 +196,9 @@ export default function PortfolioPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 md:p-24 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
+      <MainNav />
+      <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Portfolio</h1>
@@ -209,12 +211,6 @@ export default function PortfolioPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               <span>New Portfolio</span>
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="text-red-600 hover:text-red-700 font-medium"
-            >
-              Sign Out
             </button>
           </div>
         </div>

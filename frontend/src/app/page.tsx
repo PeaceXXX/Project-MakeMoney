@@ -9,7 +9,12 @@ export default function Home() {
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
-    setIsAuthenticated(!!token)
+    if (token) {
+      // Redirect logged-in users to dashboard
+      router.push('/dashboard')
+      return
+    }
+    setIsAuthenticated(false)
   }, [])
 
   return (

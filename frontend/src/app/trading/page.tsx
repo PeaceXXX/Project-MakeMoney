@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import MainNav from '@/components/MainNav';
 
 // Types
 type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit';
@@ -80,10 +81,20 @@ export default function TradingPage() {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      window.location.href = '/login'
+      return
+    }
+    fetchOrders();
+    fetchShortPositions();
+  }, []);
+
   // Fetch orders
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/orders`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -98,7 +109,7 @@ export default function TradingPage() {
   // Fetch short positions
   const fetchShortPositions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/orders/short-positions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -131,15 +142,10 @@ export default function TradingPage() {
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-    fetchShortPositions();
-  }, []);
-
   // Validate order
   const validateOrder = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.post(`${API_BASE}/orders/validate`, {
         symbol,
         order_type: orderType,
@@ -160,7 +166,7 @@ export default function TradingPage() {
   // Pre-trade risk check
   const performRiskCheck = async (orderData: any): Promise<RiskCheckResult> => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await axios.post(`${API_BASE}/orders/risk-check`, orderData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -259,7 +265,7 @@ export default function TradingPage() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       await axios.post(`${API_BASE}/orders`, orderToConfirm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -283,7 +289,7 @@ export default function TradingPage() {
     if (!confirm('Are you sure you want to cancel this order?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       await axios.delete(`${API_BASE}/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -322,6 +328,7 @@ export default function TradingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <MainNav />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
