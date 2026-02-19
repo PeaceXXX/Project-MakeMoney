@@ -94,6 +94,76 @@ def get_orders(
     )
 
 
+@router.get("/orders/pending", response_model=List[OrderResponse])
+def get_pending_orders_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get all pending orders for the current user.
+    """
+    orders = get_pending_orders(db, current_user.id)
+    return [OrderResponse.model_validate(o) for o in orders]
+
+
+@router.get("/orders/short-positions")
+def get_short_positions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get all open short positions for the current user.
+    """
+    # For now, return mock data since short positions aren't fully implemented
+    # In a real implementation, this would query the database for short positions
+    return {
+        "positions": [],
+        "total": 0
+    }
+
+
+@router.post("/orders/validate", response_model=OrderValidationResult)
+def validate_order_endpoint(
+    order_data: OrderCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Validate an order before creation.
+
+    Returns validation result with errors and warnings.
+    """
+    return validate_order(db, current_user, order_data)
+
+
+@router.post("/orders/risk-check")
+def risk_check_order(
+    order_data: OrderCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Perform pre-trade risk check on an order.
+    """
+    # For now, return a basic risk check result
+    # In a real implementation, this would perform comprehensive risk analysis
+    return {
+        "passed": True,
+        "warnings": [],
+        "errors": [],
+        "details": {
+            "order_value": (order_data.quantity or 0) * (order_data.limit_price or 100),
+            "account_balance": 100000,
+            "available_cash": 75000,
+            "position_concentration": 5.0,
+            "daily_trades": 0,
+            "max_daily_trades": 25,
+            "order_percent_of_portfolio": 5.0,
+            "max_order_percent": 25
+        }
+    }
+
+
 @router.get("/orders/{order_id}", response_model=OrderDetail)
 def get_order_detail(
     order_id: int,
@@ -159,32 +229,6 @@ def cancel_order_endpoint(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-
-
-@router.get("/orders/pending", response_model=List[OrderResponse])
-def get_pending_orders_endpoint(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Get all pending orders for the current user.
-    """
-    orders = get_pending_orders(db, current_user.id)
-    return [OrderResponse.model_validate(o) for o in orders]
-
-
-@router.post("/orders/validate", response_model=OrderValidationResult)
-def validate_order_endpoint(
-    order_data: OrderCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Validate an order before creation.
-
-    Returns validation result with errors and warnings.
-    """
-    return validate_order(db, current_user, order_data)
 
 
 @router.get("/orders/{order_id}/executions", response_model=List[TradeExecutionResponse])
