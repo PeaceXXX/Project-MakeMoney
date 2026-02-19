@@ -1,6 +1,7 @@
 """
 User database model.
 """
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -20,7 +21,7 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     # Relationships
     portfolios = relationship("Portfolio", back_populates="user")

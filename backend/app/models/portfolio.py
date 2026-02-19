@@ -1,6 +1,7 @@
 """
 Portfolio database models.
 """
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -16,7 +17,7 @@ class Portfolio(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="portfolios")
@@ -33,7 +34,7 @@ class Holding(Base):
     quantity = Column(Integer, nullable=False)
     purchase_price = Column(Float, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     # Relationships
     portfolio = relationship("Portfolio", back_populates="holdings")
