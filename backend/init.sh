@@ -11,8 +11,6 @@ fi
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-source venv/bin/activate
-
 # Install dependencies
 echo "Installing dependencies..."
 pip install -r requirements.txt
@@ -30,6 +28,10 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/trading_platform
 SMTP_TLS=true
 EOF
 fi
+
+# Initialize database tables
+echo "Initializing database tables..."
+python -c "from app.db.init_db import init_db; init_db()"
 
 # Run database migrations if alembic is configured
 if [ -d "alembic" ]; then

@@ -112,6 +112,13 @@ async def root():
     }
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables on startup."""
+    from app.core.database import Base, engine
+    Base.metadata.create_all(bind=engine)
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
