@@ -41,9 +41,92 @@ from app.services.market_service import (
     update_market_index,
     initialize_market_indices
 )
+from app.services.realtime_market_service import (
+    get_realtime_quote,
+    get_multiple_quotes,
+    get_market_indices_realtime,
+    get_historical_data_yahoo,
+    is_market_open
+)
 
 
 router = APIRouter()
+
+
+# ==================== REAL-TIME ENDPOINTS ====================
+
+@router.get("/market/realtime/status")
+def get_market_status(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get current market status (open/closed).
+    """
+    return {
+        "is_market_open": is_market_open(),
+        "message": "Market is open" if is_market_open() else "Market is closed - showing last close data"
+    }
+
+
+@router.get("/market/realtime/indices/live")
+def get_live_market_indices(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get real-time market indices data.
+    """
+    indices = get_market_indices_realtime()
+    return {
+        "indices": indices,
+        "is_market_open": is_market_open()
+    }
+
+
+@router.get("/market/realtime/{symbol}/history/live")
+def get_live_historical_data(
+    symbol: str,
+    period: str = Query('1mo', description="Period: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, max"),
+    interval: str = Query('1d', description="Interval: 1m, 5m, 15m, 30m, 1h, 1d, 1wk, 1mo"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get historical price data from Yahoo Finance.
+    """
+    data = get_historical_data_yahoo(symbol, period, interval)
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not fetch historical data for symbol: {symbol}"
+        )
+    return {
+        "symbol": symbol.upper(),
+        "period": period,
+        "interval": interval,
+        "data": data
+    }
+
+
+@router.get("/market/realtime/{symbol}")
+def get_realtime_stock_quote(
+    symbol: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get real-time stock quote from Yahoo Finance.
+
+    Returns live data during market hours, last close data after hours.
+    No authentication required for real-time data.
+    """
+    quote = get_realtime_quote(symbol)
+    if not quote:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not fetch data for symbol: {symbol}"
+        )
+    return quote
+
+
+# ==================== EXISTING ENDPOINTS ====================
 
 
 @router.get("/market/stock/{symbol}", response_model=StockWithMarketData)

@@ -140,6 +140,11 @@ export default function MarketPage() {
   const [institutionalLoading, setInstitutionalLoading] = useState(false);
   const [institutionalFilter, setInstitutionalFilter] = useState<'all' | 'buy' | 'sell'>('all');
 
+  // Real-time data states
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [realtimePrices, setRealtimePrices] = useState<Record<string, any>>({});
+
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
   // Fetch market data on mount
@@ -149,21 +154,100 @@ export default function MarketPage() {
       window.location.href = '/login'
       return
     }
+    fetchMarketStatus();
     fetchMarketIndices();
     fetchWatchlist();
     setLoading(false);
   }, []);
 
-  // Fetch market indices
-  const fetchMarketIndices = async () => {
+  // Real-time polling during market hours
+  useEffect(() => {
+    if (!isMarketOpen) return;
+
+    // Poll for real-time data every 5 seconds during market hours
+    const pollInterval = setInterval(() => {
+      fetchRealtimeMarketIndices();
+      if (selectedIndex) {
+        fetchRealtimeQuote(selectedIndex.symbol);
+      }
+      // Update watchlist prices
+      watchlist.forEach(item => {
+        fetchRealtimeQuote(item.stock.symbol);
+      });
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [isMarketOpen, selectedIndex, watchlist]);
+
+  // Fetch market status
+  const fetchMarketStatus = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/market/indices`, {
+      const response = await axios.get(`${API_BASE}/market/realtime/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMarketIndices(response.data);
+      setIsMarketOpen(response.data.is_market_open);
     } catch (error) {
-      console.error('Failed to fetch market indices:', error);
+      console.error('Failed to fetch market status:', error);
+    }
+  };
+
+  // Fetch real-time quote for a single stock
+  const fetchRealtimeQuote = async (symbol: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE}/market/realtime/${symbol}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRealtimePrices(prev => ({
+        ...prev,
+        [symbol.toUpperCase()]: response.data
+      }));
+      setLastUpdated(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error(`Failed to fetch real-time quote for ${symbol}:`, error);
+    }
+  };
+
+  // Fetch real-time market indices
+  const fetchRealtimeMarketIndices = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE}/market/realtime/indices/live`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.indices && response.data.indices.length > 0) {
+        setMarketIndices(response.data.indices.map((idx: any) => ({
+          id: idx.symbol,
+          symbol: idx.symbol,
+          name: idx.name,
+          current_value: idx.current_value,
+          change: idx.change,
+          change_percent: idx.change_percent
+        })));
+        setIsMarketOpen(response.data.is_market_open);
+      }
+    } catch (error) {
+      console.error('Failed to fetch real-time indices:', error);
+    }
+  };
+
+  // Fetch market indices (with real-time fallback)
+  const fetchMarketIndices = async () => {
+    try {
+      // Try real-time first
+      await fetchRealtimeMarketIndices();
+    } catch (error) {
+      // Fallback to database
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await axios.get(`${API_BASE}/market/indices`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMarketIndices(response.data);
+      } catch (dbError) {
+        console.error('Failed to fetch market indices:', dbError);
+      }
     }
   };
 
@@ -212,15 +296,34 @@ export default function MarketPage() {
     setSearchQuery('');
     setSearchResults([]);
 
+    // Fetch real-time quote first
+    await fetchRealtimeQuote(stock.symbol);
+
+    // Fetch historical data from Yahoo Finance
     try {
       const token = localStorage.getItem('access_token');
+      const periodMap: Record<string, string> = {
+        '1D': '1d', '1W': '5d', '1M': '1mo', '3M': '3mo',
+        '6M': '6mo', '1Y': '1y', 'ALL': 'max'
+      };
       const response = await axios.get(
-        `${API_BASE}/market/stock/${stock.symbol}/history?timeframe=${timeframe}`,
+        `${API_BASE}/market/realtime/${stock.symbol}/history/live?period=${periodMap[timeframe] || '1mo'}&interval=1d`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setHistoricalData(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch historical data:', error);
+      console.error('Failed to fetch live historical data, trying fallback:', error);
+      // Fallback to database historical data
+      try {
+        const token = localStorage.getItem('access_token');
+        const response = await axios.get(
+          `${API_BASE}/market/stock/${stock.symbol}/history?timeframe=${timeframe}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setHistoricalData(response.data.data);
+      } catch (fallbackError) {
+        console.error('Failed to fetch historical data:', fallbackError);
+      }
     }
 
     // Fetch news for selected stock
@@ -696,8 +799,40 @@ export default function MarketPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Market Data</h1>
-          <p className="text-gray-600">Real-time stock prices and market information</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Market Data</h1>
+              <p className="text-gray-600">Real-time stock prices and market information</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              {/* Market Status Indicator */}
+              <div className={`flex items-center px-4 py-2 rounded-full ${
+                isMarketOpen
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                <span className={`w-2 h-2 rounded-full mr-2 ${
+                  isMarketOpen ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                }`}></span>
+                <span className="text-sm font-medium">
+                  {isMarketOpen ? 'Market Open' : 'Market Closed'}
+                </span>
+              </div>
+              {/* Last Updated */}
+              {lastUpdated && (
+                <span className="text-sm text-gray-500">
+                  Last updated: {lastUpdated}
+                </span>
+              )}
+            </div>
+          </div>
+          {!isMarketOpen && (
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-700">
+                <strong>Note:</strong> Market is currently closed. Showing last trading session data.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Market Indices */}
