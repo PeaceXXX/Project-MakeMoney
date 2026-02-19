@@ -443,7 +443,7 @@ export default function LoginPage() {
             </div>
 
             <div className="text-center">
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+              <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
                 Forgot your password?
               </a>
             </div>
@@ -453,9 +453,9 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
           By signing in, you agree to our{' '}
-          <a href="#" className="text-blue-600 hover:text-blue-700">Terms of Service</a>
+          <a href="/terms" className="text-blue-600 hover:text-blue-700">Terms of Service</a>
           {' '}and{' '}
-          <a href="#" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>
+          <a href="/privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>
         </p>
       </div>
     </div>

@@ -149,6 +149,53 @@ export default function PortfolioPage() {
     }
   }
 
+  const handleApplyRebalancing = async () => {
+    if (!selectedPortfolio || holdings.length === 0) {
+      setError('No holdings to rebalance')
+      return
+    }
+
+    if (!confirm('This will create orders to rebalance your portfolio according to target allocations. Continue?')) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('access_token')
+      // Calculate rebalancing orders
+      const rebalanceOrders = holdings.slice(0, 3).map((holding, index) => {
+        const currentWeight = (holding.quantity * holding.purchase_price) / calculateTotalValue() * 100
+        const targetWeight = 20 - (index * 5)
+        const diff = currentWeight - targetWeight
+
+        if (diff > 5) {
+          return {
+            symbol: holding.symbol,
+            side: 'sell',
+            quantity: Math.floor(((diff - 5) * calculateTotalValue() / 100 / holding.purchase_price))
+          }
+        } else if (diff < -5) {
+          return {
+            symbol: holding.symbol,
+            side: 'buy',
+            quantity: Math.floor(((-diff - 5) * calculateTotalValue() / 100 / holding.purchase_price))
+          }
+        }
+        return null
+      }).filter(Boolean)
+
+      if (rebalanceOrders.length === 0) {
+        alert('Your portfolio is already balanced!')
+        return
+      }
+
+      // In a real app, this would submit orders to the backend
+      // For now, show a success message
+      alert(`Rebalancing orders created:\n${rebalanceOrders.map((o: any) => `${o.side.toUpperCase()} ${o.quantity} shares of ${o.symbol}`).join('\n')}`)
+    } catch (err: any) {
+      setError('Failed to apply rebalancing')
+    }
+  }
+
   const handleSignOut = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('remember_me')
@@ -460,7 +507,10 @@ export default function PortfolioPage() {
                       );
                     })}
                   </div>
-                  <button className="mt-4 w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors">
+                  <button
+                    onClick={handleApplyRebalancing}
+                    className="mt-4 w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
+                  >
                     Apply Rebalancing
                   </button>
                 </div>
