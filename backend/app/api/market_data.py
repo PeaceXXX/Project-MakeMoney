@@ -48,6 +48,7 @@ from app.services.realtime_market_service import (
     get_historical_data_yahoo,
     is_market_open
 )
+from app.services.market_universe_service import market_universe_service
 
 
 router = APIRouter()
@@ -415,3 +416,141 @@ def update_market_data_endpoint(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+# ==================== COMPREHENSIVE MARKET DATA ENDPOINTS ====================
+
+@router.get("/market/stocks/all")
+def get_all_stocks_realtime(
+    limit: int = Query(100, ge=1, le=500, description="Number of stocks to return"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get real-time data for all US stocks with pagination.
+
+    Returns a comprehensive list of stocks with current price, change, volume, and market cap.
+    Supports pagination for large datasets.
+    """
+    # Initialize stock universe if needed
+    market_universe_service.initialize_stock_universe(db)
+
+    result = market_universe_service.get_all_stocks_realtime(db, limit, offset)
+    return result
+
+
+@router.get("/market/stocks/sectors")
+def get_sector_performance(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get sector performance data.
+
+    Returns stocks grouped by sector with average performance, total volume, and market cap.
+    """
+    result = market_universe_service.get_sector_performance(db)
+    return result
+
+
+@router.get("/market/breadth")
+def get_market_breadth(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get market breadth indicators.
+
+    Returns advance/decline statistics, new highs/lows, and market breadth ratios.
+    """
+    result = market_universe_service.get_market_breadth(db)
+    return result
+
+
+@router.get("/market/overview")
+def get_market_overview(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get comprehensive market overview.
+
+    Returns market status, major indices, top gainers/losers, and sector performance.
+    """
+    # Initialize stock universe if needed
+    market_universe_service.initialize_stock_universe(db)
+
+    result = market_universe_service.get_market_overview(db)
+    return result
+
+
+@router.post("/market/initialize", status_code=status.HTTP_201_CREATED)
+def initialize_market_universe(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Initialize the market universe with all major US stocks.
+
+    This will add S&P 500, NASDAQ, DOW components and popular ETFs to the database.
+    """
+    try:
+        count = market_universe_service.initialize_stock_universe(db)
+        return {
+            "message": f"Successfully initialized market universe with {count} stocks",
+            "stocks_added": count
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to initialize market universe: {str(e)}"
+        )
+
+
+@router.get("/market/stocks/search/all")
+def search_all_stocks(
+    query: str = Query(..., min_length=1, description="Search query for symbol or name"),
+    limit: int = Query(50, ge=1, le=200, description="Maximum number of results"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Search across all stocks in the universe.
+
+    Returns stocks matching the search query from the comprehensive stock universe.
+    """
+    # Initialize if needed
+    await market_universe_service.initialize_stock_universe(db)
+
+    # Search in database
+    results = []
+    query_lower = query.lower()
+
+    stocks = db.query(Stock).filter(
+        or_(
+            Stock.symbol.ilike(f"%{query_lower}%"),
+            Stock.name.ilike(f"%{query_lower}%")
+        )
+    ).limit(limit).all()
+
+    # Get real-time data for search results
+    symbols = [stock.symbol for stock in stocks]
+    realtime_data = market_universe_service._fetch_batch_realtime_data(symbols)
+
+    for stock in stocks:
+        data = realtime_data.get(stock.symbol, {})
+        stock_info = {
+            **stock.__dict__,
+            'current_price': data.get('price', 0),
+            'change': data.get('change', 0),
+            'change_percent': data.get('change_percent', 0),
+            'volume': data.get('volume', 0)
+        }
+        results.append(stock_info)
+
+    return {
+        "results": results,
+        "total": len(results),
+        "query": query
+    }
