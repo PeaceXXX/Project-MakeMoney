@@ -5,8 +5,8 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 import time
 import yfinance as yf
-from ..models.database import SessionLocal
-from ..models import Stock, MarketData, db
+from ..core.database import SessionLocal
+from ..models import Stock, MarketData
 
 logger = logging.getLogger(__name__)
 

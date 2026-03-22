@@ -4,9 +4,11 @@ Market data API endpoints for stocks and market information.
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from app.core.database import get_db
 from app.api.deps import get_current_active_user
 from app.models.user import User
+from app.models.market_data import Stock
 from app.schemas.market_data import (
     StockCreate,
     StockUpdate,
@@ -521,7 +523,7 @@ def search_all_stocks(
     Returns stocks matching the search query from the comprehensive stock universe.
     """
     # Initialize if needed
-    await market_universe_service.initialize_stock_universe(db)
+    market_universe_service.initialize_stock_universe(db)
 
     # Search in database
     results = []
