@@ -17,6 +17,7 @@ export interface Portfolio {
   id: number
   name: string
   description?: string
+  holdings_count?: number
   created_at: string
   updated_at: string
 }

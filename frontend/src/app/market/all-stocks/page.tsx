@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import MainNav from '@/components/MainNav';
 
@@ -38,13 +38,7 @@ const AllStocksPage: React.FC = () => {
   const [filterSector, setFilterSector] = useState<string>('');
   const [filterExchange, setFilterExchange] = useState<string>('');
 
-  useEffect(() => {
-    fetchStocks();
-    const interval = setInterval(fetchStocks, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [page, limit, searchQuery, sortBy, sortOrder, filterSector, filterExchange]);
-
-  const fetchStocks = async () => {
+  const fetchStocks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -72,7 +66,13 @@ const AllStocksPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, searchQuery, sortBy, sortOrder, filterSector, filterExchange]);
+
+  useEffect(() => {
+    fetchStocks();
+    const interval = setInterval(fetchStocks, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [fetchStocks]);
 
   const formatPrice = (price: number): string => {
     return `$${price.toFixed(2)}`;
@@ -94,7 +94,7 @@ const AllStocksPage: React.FC = () => {
     return change >= 0 ? 'text-green-600' : 'text-red-600';
   };
 
-  const handleSort = (field: string) => {
+  const handleSort = (field: 'symbol' | 'name' | 'price' | 'change_percent' | 'volume' | 'market_cap') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {

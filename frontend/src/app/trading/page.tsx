@@ -105,10 +105,10 @@ export default function TradingPage() {
     fetchOrders();
     fetchShortPositions();
     fetchMarketStatus();
-  }, []);
+  }, [fetchOrders, fetchShortPositions, fetchMarketStatus]);
 
   // Fetch market status
-  const fetchMarketStatus = async () => {
+  const fetchMarketStatus = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/realtime/status`, {
@@ -118,7 +118,7 @@ export default function TradingPage() {
     } catch (error) {
       console.error('Failed to fetch market status:', error);
     }
-  };
+  }, [API_BASE]);
 
   // Fetch real-time quote for symbol
   const fetchRealtimeQuote = useCallback(async (sym: string) => {
