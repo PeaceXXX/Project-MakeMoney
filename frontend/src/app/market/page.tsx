@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import MainNav from '@/components/MainNav';
+import MarketOverview from '@/components/market/MarketOverview';
+import SectorPerformance from '@/components/market/SectorPerformance';
+import MarketBreadth from '@/components/market/MarketBreadth';
+import StockSearch from '@/components/market/StockSearch';
 
 // Types
 interface Stock {
@@ -10,10 +14,13 @@ interface Stock {
   symbol: string;
   name: string;
   exchange: string;
-  current_price: number | null;
-  change: number | null;
-  change_percent: number | null;
-  volume: number | null;
+  sector?: string;
+  industry?: string;
+  current_price?: number | null;
+  change?: number | null;
+  change_percent?: number | null;
+  volume?: number | null;
+  market_cap?: number;
 }
 
 interface MarketIndex {
@@ -145,42 +152,13 @@ export default function MarketPage() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [realtimePrices, setRealtimePrices] = useState<Record<string, any>>({});
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'overview' | 'sectors' | 'breadth'>('overview');
+
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-  // Fetch market data on mount
-  useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      window.location.href = '/login'
-      return
-    }
-    fetchMarketStatus();
-    fetchMarketIndices();
-    fetchWatchlist();
-    setLoading(false);
-  }, []);
-
-  // Real-time polling during market hours
-  useEffect(() => {
-    if (!isMarketOpen) return;
-
-    // Poll for real-time data every 10 seconds during market hours
-    const pollInterval = setInterval(() => {
-      fetchRealtimeMarketIndices();
-      if (selectedIndex) {
-        fetchRealtimeQuote(selectedIndex.symbol);
-      }
-      // Update watchlist prices
-      watchlist.forEach(item => {
-        fetchRealtimeQuote(item.stock.symbol);
-      });
-    }, 10000);
-
-    return () => clearInterval(pollInterval);
-  }, [isMarketOpen, selectedIndex, watchlist]);
-
   // Fetch market status
-  const fetchMarketStatus = async () => {
+  const fetchMarketStatus = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/realtime/status`, {
@@ -190,10 +168,10 @@ export default function MarketPage() {
     } catch (error) {
       console.error('Failed to fetch market status:', error);
     }
-  };
+  }, [API_BASE]);
 
   // Fetch real-time quote for a single stock
-  const fetchRealtimeQuote = async (symbol: string) => {
+  const fetchRealtimeQuote = useCallback(async (symbol: string) => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/realtime/${symbol}`, {
@@ -207,10 +185,10 @@ export default function MarketPage() {
     } catch (error) {
       console.error(`Failed to fetch real-time quote for ${symbol}:`, error);
     }
-  };
+  }, [API_BASE]);
 
   // Fetch real-time market indices
-  const fetchRealtimeMarketIndices = async () => {
+  const fetchRealtimeMarketIndices = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/realtime/indices/live`, {
@@ -230,10 +208,10 @@ export default function MarketPage() {
     } catch (error) {
       console.error('Failed to fetch real-time indices:', error);
     }
-  };
+  }, [API_BASE]);
 
   // Fetch market indices (with real-time fallback)
-  const fetchMarketIndices = async () => {
+  const fetchMarketIndices = useCallback(async () => {
     try {
       // Try real-time first
       await fetchRealtimeMarketIndices();
@@ -249,10 +227,10 @@ export default function MarketPage() {
         console.error('Failed to fetch market indices:', dbError);
       }
     }
-  };
+  }, [API_BASE, fetchRealtimeMarketIndices]);
 
   // Fetch watchlist
-  const fetchWatchlist = async () => {
+  const fetchWatchlist = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/market/watchlist`, {
@@ -262,7 +240,39 @@ export default function MarketPage() {
     } catch (error) {
       console.error('Failed to fetch watchlist:', error);
     }
-  };
+  }, [API_BASE]);
+
+  // Fetch market data on mount
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      window.location.href = '/login'
+      return
+    }
+    fetchMarketStatus();
+    fetchMarketIndices();
+    fetchWatchlist();
+    setLoading(false);
+  }, [fetchMarketStatus, fetchMarketIndices, fetchWatchlist]);
+
+  // Real-time polling during market hours
+  useEffect(() => {
+    if (!isMarketOpen) return;
+
+    // Poll for real-time data every 10 seconds during market hours
+    const pollInterval = setInterval(() => {
+      fetchRealtimeMarketIndices();
+      if (selectedIndex) {
+        fetchRealtimeQuote(selectedIndex.symbol);
+      }
+      // Update watchlist prices
+      watchlist.forEach(item => {
+        fetchRealtimeQuote(item.stock.symbol);
+      });
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [isMarketOpen, selectedIndex, watchlist, fetchRealtimeMarketIndices, fetchRealtimeQuote]);
 
   // Search stocks
   useEffect(() => {
@@ -288,7 +298,7 @@ export default function MarketPage() {
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, API_BASE]);
 
   // Select a stock
   const selectStock = async (stock: Stock) => {
@@ -599,23 +609,23 @@ export default function MarketPage() {
     }
   };
 
-  const formatPrice = (price: number | null) => {
-    return price !== null ? `$${price.toFixed(2)}` : '-';
+  const formatPrice = (price: number | null | undefined) => {
+    return price !== null && price !== undefined ? `$${price.toFixed(2)}` : '-';
   };
 
-  const formatChange = (change: number | null, percent: number | null) => {
-    if (change === null || percent === null) return '-';
+  const formatChange = (change: number | null | undefined, percent: number | null | undefined) => {
+    if (change === null || change === undefined || percent === null || percent === undefined) return '-';
     const sign = change >= 0 ? '+' : '';
     return `${sign}${change.toFixed(2)} (${sign}${percent.toFixed(2)}%)`;
   };
 
-  const getChangeColor = (change: number | null) => {
-    if (change === null) return 'text-gray-500';
+  const getChangeColor = (change: number | null | undefined) => {
+    if (change === null || change === undefined) return 'text-gray-500';
     return change >= 0 ? 'text-green-600' : 'text-red-600';
   };
 
   // Calculate technical indicators
-  const calculateSMA = (data: number[], period: number): number[] => {
+  const calculateSMA = useCallback((data: number[], period: number): number[] => {
     const result: number[] = [];
     for (let i = 0; i < data.length; i++) {
       if (i < period - 1) {
@@ -626,9 +636,9 @@ export default function MarketPage() {
       }
     }
     return result;
-  };
+  }, []);
 
-  const calculateEMA = (data: number[], period: number): number[] => {
+  const calculateEMA = useCallback((data: number[], period: number): number[] => {
     const result: number[] = [];
     const multiplier = 2 / (period + 1);
     let ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
@@ -644,9 +654,9 @@ export default function MarketPage() {
       }
     }
     return result;
-  };
+  }, []);
 
-  const calculateRSI = (data: number[], period: number): number[] => {
+  const calculateRSI = useCallback((data: number[], period: number): number[] => {
     const result: number[] = [];
     const gains: number[] = [];
     const losses: number[] = [];
@@ -668,12 +678,12 @@ export default function MarketPage() {
       }
     }
     return result;
-  };
+  }, []);
 
-  const calculateMACD = (data: number[], fast: number, slow: number, signal: number): { macd: number[], signal: number[], histogram: number[] } => {
+  const calculateMACD = useCallback((data: number[], fast: number, slow: number, signal: number): { macd: number[], signal: number[], histogram: number[] } => {
     const emaFast = calculateEMA(data, fast);
     const emaSlow = calculateEMA(data, slow);
-    const macdLine = emaFast.map((fast, i) => fast - emaSlow[i]);
+    const macdLine = emaFast.map((fastVal, i) => fastVal - emaSlow[i]);
     const signalLine = calculateEMA(macdLine.filter(v => !isNaN(v)), signal);
     const histogram = macdLine.map((macd, i) => {
       const signalIdx = i - (slow - 1);
@@ -682,9 +692,9 @@ export default function MarketPage() {
     });
 
     return { macd: macdLine, signal: signalLine, histogram };
-  };
+  }, [calculateEMA]);
 
-  const calculateBollingerBands = (data: number[], period: number, stdDev: number): { upper: number[], middle: number[], lower: number[] } => {
+  const calculateBollingerBands = useCallback((data: number[], period: number, stdDev: number): { upper: number[], middle: number[], lower: number[] } => {
     const middle = calculateSMA(data, period);
     const upper: number[] = [];
     const lower: number[] = [];
@@ -704,7 +714,7 @@ export default function MarketPage() {
     }
 
     return { upper, middle, lower };
-  };
+  }, [calculateSMA]);
 
   // Toggle indicator
   const toggleIndicator = (indicatorId: string) => {
@@ -783,7 +793,7 @@ export default function MarketPage() {
     });
 
     setIndicatorValues(newValues);
-  }, [historicalData, activeIndicators, indicatorParams]);
+  }, [historicalData, activeIndicators, indicatorParams, calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands]);
 
   if (loading) {
     return (
@@ -802,7 +812,7 @@ export default function MarketPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Market Data</h1>
-              <p className="text-gray-600">Real-time stock prices and market information</p>
+              <p className="text-gray-600">Real-time US market data and comprehensive analysis</p>
             </div>
             <div className="flex items-center space-x-4">
               {/* Market Status Indicator */}
@@ -826,706 +836,109 @@ export default function MarketPage() {
               )}
             </div>
           </div>
-          {!isMarketOpen && (
-            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-700">
-                <strong>Note:</strong> Market is currently closed. Showing last trading session data.
-              </p>
-            </div>
-          )}
         </div>
 
-        {/* Market Indices */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Market Indices</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {marketIndices.map((index) => (
-              <div key={index.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all">
-                <div className="text-sm text-gray-600 mb-1">{index.name}</div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {index.current_value.toFixed(2)}
-                </div>
-                <div className={`text-sm font-medium ${getChangeColor(index.change)}`}>
-                  {formatChange(index.change, index.change_percent)}
-                </div>
-              </div>
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex space-x-1 bg-white rounded-lg shadow-sm p-1">
+            {[
+              { id: 'overview', label: 'Market Overview', icon: '📊' },
+              { id: 'sectors', label: 'Sector Performance', icon: '🏭' },
+              { id: 'breadth', label: 'Market Breadth', icon: '📉' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex items-center px-4 py-2 rounded-md font-medium transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Search and Stock Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Search */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search stocks by symbol or name..."
-                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <svg className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                {searchLoading && (
-                  <div className="absolute right-3 top-3.5">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  </div>
-                )}
-              </div>
+        {/* Tab Content */}
+        <div className="space-y-6">
+          {activeTab === 'overview' && (
+            <MarketOverview />
+          )}
 
-              {/* Search Results */}
-              {searchResults.length > 0 && (
-                <div className="mt-4 border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
-                  {searchResults.map((stock) => (
-                    <div
-                      key={stock.id}
-                      onClick={() => selectStock(stock)}
-                      className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+          {activeTab === 'sectors' && (
+            <SectorPerformance />
+          )}
+
+          {activeTab === 'breadth' && (
+            <MarketBreadth />
+          )}
+        </div>
+
+        {/* Stock Search and Watchlist Section */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Stock Search */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Stocks</h2>
+              <StockSearch onSelect={(stock) => { selectStock(stock); }} />
+
+              {/* Selected Stock Details */}
+              {selectedIndex && (
+                <div className="mt-6 border-t pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">{selectedIndex.symbol}</h3>
+                      <p className="text-gray-600">{selectedIndex.name}</p>
+                    </div>
+                    <button
+                      onClick={() => addToWatchlist(selectedIndex.id)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all"
                     >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-semibold text-gray-900">{stock.symbol}</div>
-                          <div className="text-sm text-gray-600">{stock.name}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-gray-900">{formatPrice(stock.current_price)}</div>
-                          <div className={`text-sm font-medium ${getChangeColor(stock.change)}`}>
-                            {formatChange(stock.change, stock.change_percent)}
-                          </div>
-                        </div>
+                      Add to Watchlist
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Current Price</div>
+                      <div className="text-xl font-bold text-gray-900">
+                        {realtimePrices[selectedIndex.symbol.toUpperCase()]
+                          ? `$${realtimePrices[selectedIndex.symbol.toUpperCase()].price?.toFixed(2) || formatPrice(selectedIndex.current_price)}`
+                          : formatPrice(selectedIndex.current_price)}
                       </div>
                     </div>
-                  ))}
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Change</div>
+                      <div className={`text-xl font-bold ${getChangeColor(selectedIndex.change)}`}>
+                        {formatChange(selectedIndex.change, selectedIndex.change_percent)}
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Volume</div>
+                      <div className="text-xl font-bold text-gray-900">
+                        {selectedIndex.volume?.toLocaleString() || '-'}
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Exchange</div>
+                      <div className="text-xl font-bold text-gray-900">{selectedIndex.exchange}</div>
+                    </div>
+                  </div>
+
+                  {/* Historical Data Info */}
+                  {historicalData.length > 0 && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">
+                        Historical data available: {historicalData.length} data points
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* Selected Stock Details */}
-            {selectedIndex && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedIndex.symbol}</h2>
-                    <p className="text-gray-600">{selectedIndex.name}</p>
-                  </div>
-                  <button
-                    onClick={() => addToWatchlist(selectedIndex.id)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all"
-                  >
-                    Add to Watchlist
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Current Price</div>
-                    <div className="text-xl font-bold text-gray-900">{formatPrice(selectedIndex.current_price)}</div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Change</div>
-                    <div className={`text-xl font-bold ${getChangeColor(selectedIndex.change)}`}>
-                      {formatChange(selectedIndex.change, selectedIndex.change_percent)}
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Volume</div>
-                    <div className="text-xl font-bold text-gray-900">
-                      {selectedIndex.volume?.toLocaleString() || '-'}
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-600 mb-1">Exchange</div>
-                    <div className="text-xl font-bold text-gray-900">{selectedIndex.exchange}</div>
-                  </div>
-                </div>
-
-                {/* Timeframe Selector */}
-                <div className="flex space-x-2 mb-4">
-                  {['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setTimeframe(tf)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                        timeframe === tf
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {tf}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Technical Indicators Controls */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-700">Technical Indicators</h3>
-                    <button
-                      onClick={() => setShowIndicatorModal(!showIndicatorModal)}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      + Add Indicator
-                    </button>
-                  </div>
-
-                  {/* Active Indicators */}
-                  {activeIndicators.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {activeIndicators.map(indicatorId => {
-                        const indicator = INDICATOR_OPTIONS.find(i => i.id === indicatorId);
-                        const values = indicatorValues[indicatorId];
-                        return (
-                          <div
-                            key={indicatorId}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm"
-                          >
-                            <span>{values?.displayName || indicator?.name}</span>
-                            <button
-                              onClick={() => toggleIndicator(indicatorId)}
-                              className="text-blue-500 hover:text-blue-700"
-                            >
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Indicator Selection Modal */}
-                  {showIndicatorModal && (
-                    <div className="absolute z-10 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg">
-                      <div className="p-3 border-b border-gray-100">
-                        <h4 className="font-medium text-gray-900">Add Technical Indicator</h4>
-                      </div>
-                      <div className="p-2">
-                        {INDICATOR_OPTIONS.map(indicator => (
-                          <button
-                            key={indicator.id}
-                            onClick={() => toggleIndicator(indicator.id)}
-                            className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
-                              activeIndicators.includes(indicator.id)
-                                ? 'bg-blue-50 text-blue-700'
-                                : 'hover:bg-gray-50 text-gray-700'
-                            }`}
-                          >
-                            <div className="font-medium">{indicator.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {indicator.type === 'overlay' ? 'Overlay on chart' : 'Separate panel'}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Chart Placeholder */}
-                <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                  </svg>
-                  <p>Historical data: {historicalData.length} data points</p>
-                  <p className="text-sm">Chart visualization coming soon</p>
-
-                  {/* Indicator Values Display */}
-                  {Object.keys(indicatorValues).length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Current Indicator Values:</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {Object.entries(indicatorValues).map(([id, indicator]) => {
-                          const lastValue = indicator.values.filter(v => !isNaN(v)).pop();
-                          return (
-                            <div key={id} className="bg-white p-2 rounded border">
-                              <span className="text-gray-600">{indicator.displayName}:</span>
-                              <span className="ml-1 font-medium text-gray-900">
-                                {lastValue !== undefined ? lastValue.toFixed(2) : 'N/A'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* RSI Panel */}
-                {activeIndicators.includes('rsi') && indicatorValues['rsi'] && (
-                  <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-sm font-medium text-gray-700">
-                        {indicatorValues['rsi'].displayName}
-                      </h4>
-                      <span className="text-sm font-bold">
-                        {(() => {
-                          const lastValue = indicatorValues['rsi'].values.filter((v: number) => !isNaN(v)).pop();
-                          if (lastValue === undefined) return 'N/A';
-                          const color = lastValue > 70 ? 'text-red-600' : lastValue < 30 ? 'text-green-600' : 'text-gray-900';
-                          return <span className={color}>{lastValue.toFixed(2)}</span>;
-                        })()}
-                      </span>
-                    </div>
-                    <div className="h-16 bg-gray-50 rounded relative">
-                      <div className="absolute top-0 left-0 right-0 h-1/3 bg-red-100 opacity-30"></div>
-                      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-green-100 opacity-30"></div>
-                      <div className="absolute top-1/3 left-0 right-0 border-t border-dashed border-gray-300"></div>
-                      <div className="absolute top-2/3 left-0 right-0 border-t border-dashed border-gray-300"></div>
-                      <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-400">
-                        Overbought {'>'} 70 | Oversold {'<'} 30
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* MACD Panel */}
-                {activeIndicators.includes('macd') && indicatorValues['macd'] && (
-                  <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-sm font-medium text-gray-700">
-                        {indicatorValues['macd'].displayName}
-                      </h4>
-                      <div className="text-sm">
-                        <span className="text-gray-600 mr-2">MACD:</span>
-                        <span className="font-bold">
-                          {indicatorValues['macd'].values.filter((v: number) => !isNaN(v)).pop()?.toFixed(2) || 'N/A'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-16 bg-gray-50 rounded flex items-center justify-center text-xs text-gray-400">
-                      MACD histogram visualization
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* News Feed */}
-            {selectedIndex && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Latest News for {selectedIndex.symbol}
-                </h2>
-
-                {newsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : newsArticles.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                    </svg>
-                    <p>No recent news available</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {newsArticles.map((article) => (
-                      <a
-                        key={article.id}
-                        href={article.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                article.sentiment === 'positive'
-                                  ? 'bg-green-100 text-green-700'
-                                  : article.sentiment === 'negative'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {article.sentiment.charAt(0).toUpperCase() + article.sentiment.slice(1)}
-                              </span>
-                              <span className="text-xs text-gray-500">{article.source}</span>
-                            </div>
-                            <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
-                              {article.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 line-clamp-2">
-                              {article.summary}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {new Date(article.published_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                          <svg className="h-5 w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Financial Data */}
-            {selectedIndex && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Financial Data
-                  </h2>
-                  {financialData && (
-                    <span className="text-sm text-gray-500">
-                      FY {financialData.fiscal_year} {financialData.quarter ? `Q${financialData.quarter}` : ''}
-                    </span>
-                  )}
-                </div>
-
-                {/* Tab Navigation */}
-                <div className="flex space-x-2 mb-4 border-b border-gray-200">
-                  {[
-                    { id: 'income', label: 'Income Statement' },
-                    { id: 'balance', label: 'Balance Sheet' },
-                    { id: 'cashflow', label: 'Cash Flow' },
-                    { id: 'ratios', label: 'Ratios' }
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveFinancialTab(tab.id as typeof activeFinancialTab)}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
-                        activeFinancialTab === tab.id
-                          ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {financialsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : financialData ? (
-                  <div>
-                    {/* Income Statement Tab */}
-                    {activeFinancialTab === 'income' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Revenue</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.income_statement.revenue / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Cost of Revenue</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.income_statement.cost_of_revenue / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Gross Profit</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.income_statement.gross_profit / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Operating Income</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.income_statement.operating_income / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-green-50 rounded-lg">
-                          <div className="text-sm text-green-600">Net Income</div>
-                          <div className="text-lg font-semibold text-green-700">
-                            ${(financialData.income_statement.net_income / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">EPS (Diluted)</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${financialData.income_statement.eps_diluted.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Balance Sheet Tab */}
-                    {activeFinancialTab === 'balance' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Total Assets</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.balance_sheet.total_assets / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Total Liabilities</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.balance_sheet.total_liabilities / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <div className="text-sm text-blue-600">Total Equity</div>
-                          <div className="text-lg font-semibold text-blue-700">
-                            ${(financialData.balance_sheet.total_equity / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Cash & Equivalents</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.balance_sheet.cash_and_equivalents / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Total Debt</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.balance_sheet.total_debt / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Current Ratio</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            {(financialData.balance_sheet.current_assets / financialData.balance_sheet.current_liabilities).toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Cash Flow Tab */}
-                    {activeFinancialTab === 'cashflow' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-green-50 rounded-lg">
-                          <div className="text-sm text-green-600">Operating Cash Flow</div>
-                          <div className="text-lg font-semibold text-green-700">
-                            ${(financialData.cash_flow.operating_cash_flow / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Investing Cash Flow</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.cash_flow.investing_cash_flow / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Financing Cash Flow</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.cash_flow.financing_cash_flow / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <div className="text-sm text-blue-600">Free Cash Flow</div>
-                          <div className="text-lg font-semibold text-blue-700">
-                            ${(financialData.cash_flow.free_cash_flow / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Capital Expenditures</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.cash_flow.capital_expenditures / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Dividends Paid</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            ${(financialData.cash_flow.dividends_paid / 1000000000).toFixed(1)}B
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Ratios Tab */}
-                    {activeFinancialTab === 'ratios' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">P/E Ratio</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            {financialData.ratios.pe_ratio.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">P/B Ratio</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            {financialData.ratios.pb_ratio.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Debt to Equity</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            {financialData.ratios.debt_to_equity.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-sm text-gray-600">Current Ratio</div>
-                          <div className="text-lg font-semibold text-gray-900">
-                            {financialData.ratios.current_ratio.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-green-50 rounded-lg">
-                          <div className="text-sm text-green-600">Return on Equity (ROE)</div>
-                          <div className="text-lg font-semibold text-green-700">
-                            {(financialData.ratios.roe * 100).toFixed(2)}%
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <div className="text-sm text-blue-600">Return on Assets (ROA)</div>
-                          <div className="text-lg font-semibold text-blue-700">
-                            {(financialData.ratios.roa * 100).toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Financial data not available</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Institutional Transactions */}
-            {selectedIndex && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Institutional Transactions
-                  </h2>
-                  <div className="flex space-x-2">
-                    {['all', 'buy', 'sell'].map((filter) => (
-                      <button
-                        key={filter}
-                        onClick={() => setInstitutionalFilter(filter as typeof institutionalFilter)}
-                        className={`px-3 py-1 text-sm rounded-lg font-medium transition-all ${
-                          institutionalFilter === filter
-                            ? filter === 'buy'
-                              ? 'bg-green-100 text-green-700'
-                              : filter === 'sell'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {institutionalLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Institution</th>
-                          <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Type</th>
-                          <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Shares</th>
-                          <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Price</th>
-                          <th className="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Value</th>
-                          <th className="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {institutionalTransactions
-                          .filter(t => institutionalFilter === 'all' || t.transaction_type === institutionalFilter)
-                          .map((transaction) => (
-                            <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="py-3 px-2">
-                                <div className="font-medium text-gray-900 text-sm">{transaction.institution_name}</div>
-                                <div className="text-xs text-gray-500">{transaction.ownership_type}</div>
-                              </td>
-                              <td className="py-3 px-2">
-                                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                                  transaction.transaction_type === 'buy'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}>
-                                  {transaction.transaction_type.toUpperCase()}
-                                </span>
-                              </td>
-                              <td className="py-3 px-2 text-right text-sm text-gray-900">
-                                {transaction.shares.toLocaleString()}
-                              </td>
-                              <td className="py-3 px-2 text-right text-sm text-gray-900">
-                                ${transaction.price.toFixed(2)}
-                              </td>
-                              <td className="py-3 px-2 text-right text-sm font-medium text-gray-900">
-                                ${(transaction.total_value / 1000000).toFixed(1)}M
-                              </td>
-                              <td className="py-3 px-2 text-sm text-gray-500">
-                                {new Date(transaction.transaction_date).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })}
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-
-                    {institutionalTransactions.filter(t => institutionalFilter === 'all' || t.transaction_type === institutionalFilter).length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <p>No transactions found</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Summary */}
-                {!institutionalLoading && institutionalTransactions.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">Total Buy Value</div>
-                      <div className="text-sm font-semibold text-green-600">
-                        ${(institutionalTransactions
-                          .filter(t => t.transaction_type === 'buy')
-                          .reduce((sum, t) => sum + t.total_value, 0) / 1000000).toFixed(1)}M
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">Total Sell Value</div>
-                      <div className="text-sm font-semibold text-red-600">
-                        ${(institutionalTransactions
-                          .filter(t => t.transaction_type === 'sell')
-                          .reduce((sum, t) => sum + t.total_value, 0) / 1000000).toFixed(1)}M
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">Net Flow</div>
-                      <div className={`text-sm font-semibold ${
-                        institutionalTransactions
-                          .filter(t => t.transaction_type === 'buy')
-                          .reduce((sum, t) => sum + t.total_value, 0) -
-                        institutionalTransactions
-                          .filter(t => t.transaction_type === 'sell')
-                          .reduce((sum, t) => sum + t.total_value, 0) >= 0
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}>
-                        ${((institutionalTransactions
-                          .filter(t => t.transaction_type === 'buy')
-                          .reduce((sum, t) => sum + t.total_value, 0) -
-                          institutionalTransactions
-                          .filter(t => t.transaction_type === 'sell')
-                          .reduce((sum, t) => sum + t.total_value, 0)) / 1000000).toFixed(1)}M
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Watchlist */}
@@ -1567,7 +980,9 @@ export default function MarketPage() {
                           {formatChange(item.stock.change, item.stock.change_percent)}
                         </div>
                         <div className="text-gray-900 font-semibold">
-                          {formatPrice(item.stock.current_price)}
+                          {realtimePrices[item.stock.symbol.toUpperCase()]
+                            ? `$${realtimePrices[item.stock.symbol.toUpperCase()].price?.toFixed(2) || formatPrice(item.stock.current_price)}`
+                            : formatPrice(item.stock.current_price)}
                         </div>
                       </div>
                     </div>

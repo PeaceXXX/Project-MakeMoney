@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 interface Stock {
@@ -26,50 +26,53 @@ const StockSearch: React.FC<StockSearchProps> = ({ className = '', onSelect }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const debounce = (func: Function, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func(...args), delay);
-    };
-  };
+  const searchStocks = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setResults([]);
+      setShowResults(false);
+      return;
+    }
 
-  const searchStocks = useCallback(
-    debounce(async (searchQuery: string) => {
-      if (!searchQuery.trim()) {
-        setResults([]);
-        setShowResults(false);
-        return;
-      }
+    try {
+      setLoading(true);
+      setError(null);
 
-      try {
-        setLoading(true);
-        setError(null);
+      const response = await axios.get(`/api/market/stocks/search/all`, {
+        params: {
+          query: searchQuery,
+          limit: 20
+        }
+      });
 
-        const response = await axios.get(`/api/market/stocks/search/all`, {
-          params: {
-            query: searchQuery,
-            limit: 20
-          }
-        });
+      setResults(response.data.results || []);
+      setShowResults(true);
+    } catch (err) {
+      console.error('Error searching stocks:', err);
+      setError('Failed to search stocks');
+      setResults([]);
+      setShowResults(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        setResults(response.data.results || []);
-        setShowResults(true);
-      } catch (err) {
-        console.error('Error searching stocks:', err);
-        setError('Failed to search stocks');
-        setResults([]);
-        setShowResults(false);
-      } finally {
-        setLoading(false);
-      }
-    }, 300),
-    []
-  );
-
+  // Debounced search effect
   useEffect(() => {
-    searchStocks(query);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      searchStocks(query);
+    }, 300);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [query, searchStocks]);
 
   const handleSelect = (stock: Stock) => {
@@ -228,7 +231,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ className = '', onSelect }) =
       {showResults && !loading && results.length === 0 && !error && query && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
           <div className="p-4 text-center text-gray-500 text-sm">
-            No stocks found for "{query}"
+            No stocks found for &quot;{query}&quot;
           </div>
         </div>
       )}
