@@ -217,7 +217,7 @@ export default function TradingPage() {
   }, [isMarketOpen, symbol, currentQuote, fetchRealtimeQuote]);
 
   // Validate order
-  const validateOrder = async () => {
+  const validateOrder = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.post(`${API_BASE}/orders/validate`, {
@@ -235,10 +235,10 @@ export default function TradingPage() {
       console.error('Validation failed:', error);
       return null;
     }
-  };
+  }, [symbol, orderType, orderSide, quantity, limitPrice, stopPrice, API_BASE]);
 
   // Pre-trade risk check
-  const performRiskCheck = async (orderData: any): Promise<RiskCheckResult> => {
+  const performRiskCheck = useCallback(async (orderData: any): Promise<RiskCheckResult> => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.post(`${API_BASE}/orders/risk-check`, orderData, {
@@ -286,10 +286,10 @@ export default function TradingPage() {
         }
       };
     }
-  };
+  }, [API_BASE]);
 
   // Submit order
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
     setIsSubmitting(true);
@@ -331,10 +331,10 @@ export default function TradingPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [validateOrder, performRiskCheck, symbol, orderType, orderSide, quantity, limitPrice, stopPrice]);
 
   // Confirm and execute order
-  const confirmOrder = async () => {
+  const confirmOrder = useCallback(async () => {
     if (!orderToConfirm) return;
 
     setIsSubmitting(true);
@@ -356,10 +356,10 @@ export default function TradingPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [orderToConfirm, fetchOrders, resetForm, API_BASE]);
 
   // Cancel order
-  const cancelOrder = async (orderId: number) => {
+  const cancelOrder = useCallback(async (orderId: number) => {
     if (!confirm('Are you sure you want to cancel this order?')) return;
 
     try {
@@ -372,9 +372,9 @@ export default function TradingPage() {
       console.error('Failed to cancel order:', error);
       alert('Failed to cancel order. Please try again.');
     }
-  };
+  }, [fetchOrders, API_BASE]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setSymbol('');
     setOrderType('market');
     setOrderSide('buy');
@@ -382,7 +382,7 @@ export default function TradingPage() {
     setLimitPrice('');
     setStopPrice('');
     setErrors([]);
-  };
+  }, []);
 
   const getStatusColor = (status: OrderStatus) => {
     const colors: Record<OrderStatus, string> = {
