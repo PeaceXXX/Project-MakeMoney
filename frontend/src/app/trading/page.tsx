@@ -950,7 +950,7 @@ export default function TradingPage() {
               </button>
               <button
                 onClick={confirmOrder}
-                disabled={isSubmitting || (riskCheckResult && !riskCheckResult.passed)}
+                disabled={isSubmitting || (riskCheckResult !== null && !riskCheckResult.passed)}
                 className={`flex-1 py-3 px-4 rounded-lg font-medium text-white transition-all ${
                   orderToConfirm.side === 'buy'
                     ? 'bg-green-500 hover:bg-green-600'
