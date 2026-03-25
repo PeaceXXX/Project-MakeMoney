@@ -96,17 +96,6 @@ export default function TradingPage() {
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-  useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      window.location.href = '/login'
-      return
-    }
-    fetchOrders();
-    fetchShortPositions();
-    fetchMarketStatus();
-  }, [fetchOrders, fetchShortPositions, fetchMarketStatus]);
-
   // Fetch market status
   const fetchMarketStatus = useCallback(async () => {
     try {
@@ -120,52 +109,8 @@ export default function TradingPage() {
     }
   }, [API_BASE]);
 
-  // Fetch real-time quote for symbol
-  const fetchRealtimeQuote = useCallback(async (sym: string) => {
-    if (!sym || sym.length < 1) {
-      setCurrentQuote(null);
-      return;
-    }
-
-    setQuoteLoading(true);
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/market/realtime/${sym.toUpperCase()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setCurrentQuote(response.data);
-      setLastUpdated(new Date().toLocaleTimeString());
-    } catch (error) {
-      console.error('Failed to fetch quote:', error);
-      setCurrentQuote(null);
-    } finally {
-      setQuoteLoading(false);
-    }
-  }, [API_BASE]);
-
-  // Fetch quote when symbol changes
-  useEffect(() => {
-    if (symbol && symbol.length >= 1) {
-      const debounceTimer = setTimeout(() => {
-        fetchRealtimeQuote(symbol);
-      }, 500);
-      return () => clearTimeout(debounceTimer);
-    }
-  }, [symbol, fetchRealtimeQuote]);
-
-  // Poll for real-time quote during market hours
-  useEffect(() => {
-    if (!isMarketOpen || !symbol || !currentQuote) return;
-
-    const pollInterval = setInterval(() => {
-      fetchRealtimeQuote(symbol);
-    }, 10000);
-
-    return () => clearInterval(pollInterval);
-  }, [isMarketOpen, symbol, currentQuote, fetchRealtimeQuote]);
-
   // Fetch orders
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/orders`, {
@@ -177,10 +122,10 @@ export default function TradingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE]);
 
   // Fetch short positions
-  const fetchShortPositions = async () => {
+  const fetchShortPositions = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const response = await axios.get(`${API_BASE}/orders/short-positions`, {
@@ -213,7 +158,63 @@ export default function TradingPage() {
         }
       ]);
     }
-  };
+  }, [API_BASE]);
+
+  // Fetch real-time quote for symbol
+  const fetchRealtimeQuote = useCallback(async (sym: string) => {
+    if (!sym || sym.length < 1) {
+      setCurrentQuote(null);
+      return;
+    }
+
+    setQuoteLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_BASE}/market/realtime/${sym.toUpperCase()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentQuote(response.data);
+      setLastUpdated(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Failed to fetch quote:', error);
+      setCurrentQuote(null);
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, [API_BASE]);
+
+  // Initial data fetch on mount
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      window.location.href = '/login'
+      return
+    }
+    fetchOrders();
+    fetchShortPositions();
+    fetchMarketStatus();
+  }, [fetchOrders, fetchShortPositions, fetchMarketStatus]);
+
+  // Fetch quote when symbol changes
+  useEffect(() => {
+    if (symbol && symbol.length >= 1) {
+      const debounceTimer = setTimeout(() => {
+        fetchRealtimeQuote(symbol);
+      }, 500);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [symbol, fetchRealtimeQuote]);
+
+  // Poll for real-time quote during market hours
+  useEffect(() => {
+    if (!isMarketOpen || !symbol || !currentQuote) return;
+
+    const pollInterval = setInterval(() => {
+      fetchRealtimeQuote(symbol);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [isMarketOpen, symbol, currentQuote, fetchRealtimeQuote]);
 
   // Validate order
   const validateOrder = async () => {
