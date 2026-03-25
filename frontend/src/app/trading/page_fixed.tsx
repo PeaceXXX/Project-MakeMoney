@@ -95,6 +95,7 @@ export default function TradingPage() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+  const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
   // Fetch market status
   const fetchMarketStatus = useCallback(async () => {
@@ -134,31 +135,34 @@ export default function TradingPage() {
       setShortPositions(response.data.positions || []);
     } catch (error) {
       console.error('Failed to fetch short positions:', error);
-      // Mock data for demo
-      setShortPositions([
-        {
-          id: 1,
-          symbol: 'TSLA',
-          quantity: 50,
-          entry_price: 245.00,
-          current_price: 238.50,
-          margin_used: 6125.00,
-          unrealized_pnl: 325.00,
-          created_at: '2026-02-15T10:00:00Z'
-        },
-        {
-          id: 2,
-          symbol: 'NVDA',
-          quantity: 25,
-          entry_price: 875.00,
-          current_price: 892.00,
-          margin_used: 10937.50,
-          unrealized_pnl: -425.00,
-          created_at: '2026-02-16T14:30:00Z'
-        }
-      ]);
+      // Mock data for demo - only use if enabled via environment variable
+      if (USE_MOCK_DATA) {
+        console.warn('Using mock short positions data');
+        setShortPositions([
+          {
+            id: 1,
+            symbol: 'TSLA',
+            quantity: 50,
+            entry_price: 245.00,
+            current_price: 238.50,
+            margin_used: 6125.00,
+            unrealized_pnl: 325.00,
+            created_at: '2026-02-15T10:00:00Z'
+          },
+          {
+            id: 2,
+            symbol: 'NVDA',
+            quantity: 25,
+            entry_price: 875.00,
+            current_price: 892.00,
+            margin_used: 10937.50,
+            unrealized_pnl: -425.00,
+            created_at: '2026-02-16T14:30:00Z'
+          }
+        ]);
+      }
     }
-  }, [API_BASE]);
+  }, [API_BASE, USE_MOCK_DATA]);
 
   // Fetch real-time quote for symbol
   const fetchRealtimeQuote = useCallback(async (sym: string) => {
@@ -247,46 +251,65 @@ export default function TradingPage() {
       return response.data;
     } catch (error) {
       console.error('Risk check failed:', error);
-      // Return mock risk check for demo purposes
-      const orderValue = orderData.quantity * (orderData.estimated_price || 100);
-      const accountBalance = 100000;
-      const availableCash = 75000;
-      const orderPercent = (orderValue / accountBalance) * 100;
+      // Return mock risk check for demo purposes - only if enabled
+      if (USE_MOCK_DATA) {
+        console.warn('Using mock risk check data');
+        const orderValue = orderData.quantity * (orderData.estimated_price || 100);
+        const accountBalance = 100000;
+        const availableCash = 75000;
+        const orderPercent = (orderValue / accountBalance) * 100;
 
-      const warnings: string[] = [];
-      const errors: string[] = [];
+        const warnings: string[] = [];
+        const errors: string[] = [];
 
-      // Risk checks
-      if (orderValue > accountBalance * 0.25) {
-        warnings.push(`Order represents ${orderPercent.toFixed(1)}% of your portfolio (recommended max 25%)`);
-      }
-      if (orderData.side === 'buy' && orderValue > availableCash) {
-        errors.push('Insufficient cash available for this order');
-      }
-      if (orderData.quantity > 10000) {
-        warnings.push('Large order size may impact market price');
-      }
-      if (orderPercent > 50) {
-        errors.push('Order exceeds 50% of portfolio value - position too concentrated');
-      }
+        // Risk checks
+        if (orderValue > accountBalance * 0.25) {
+          warnings.push(`Order represents ${orderPercent.toFixed(1)}% of your portfolio (recommended max 25%)`);
+        }
+        if (orderData.side === 'buy' && orderValue > availableCash) {
+          errors.push('Insufficient cash available for this order');
+        }
+        if (orderData.quantity > 10000) {
+          warnings.push('Large order size may impact market price');
+        }
+        if (orderPercent > 50) {
+          errors.push('Order exceeds 50% of portfolio value - position too concentrated');
+        }
 
+        return {
+          passed: errors.length === 0,
+          warnings,
+          errors,
+          details: {
+            order_value: orderValue,
+            account_balance: accountBalance,
+            available_cash: availableCash,
+            position_concentration: orderPercent,
+            daily_trades: 5,
+            max_daily_trades: 25,
+            order_percent_of_portfolio: orderPercent,
+            max_order_percent: 25
+          }
+        };
+      }
+      // Return a failed risk check if mock data is not enabled
       return {
-        passed: errors.length === 0,
-        warnings,
-        errors,
+        passed: false,
+        warnings: [],
+        errors: ['Risk check service unavailable'],
         details: {
-          order_value: orderValue,
-          account_balance: accountBalance,
-          available_cash: availableCash,
-          position_concentration: orderPercent,
-          daily_trades: 5,
-          max_daily_trades: 25,
-          order_percent_of_portfolio: orderPercent,
-          max_order_percent: 25
+          order_value: 0,
+          account_balance: 0,
+          available_cash: 0,
+          position_concentration: 0,
+          daily_trades: 0,
+          max_daily_trades: 0,
+          order_percent_of_portfolio: 0,
+          max_order_percent: 0
         }
       };
     }
-  }, [API_BASE]);
+  }, [API_BASE, USE_MOCK_DATA]);
 
   // Submit order
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
