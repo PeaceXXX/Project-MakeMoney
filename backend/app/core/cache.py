@@ -8,6 +8,7 @@ with configurable TTL per data type.
 import json
 import time
 import logging
+import threading
 from typing import Any, Optional, Dict, List, Callable
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -83,14 +84,14 @@ class InMemoryCache:
 
     def delete(self, key: str) -> None:
         with self._lock:
-                if key in self._cache:
+            if key in self._cache:
                 del self._cache[key]
                 self._access_order.remove(key)
 
     def clear(self) -> None:
         with self._lock:
             self._cache.clear()
-                self._access_order.clear()
+            self._access_order.clear()
 
     def keys(self) -> List[str]:
         with self._lock:
@@ -142,11 +143,11 @@ class CacheService:
                     if isinstance(result, dict) and 'expires' in result:
                         if time.time() > result['expires']:
                             self._redis_client.delete(key)
-                            self._stats.evictions += 1
                             return None
-        else:
-            self._stats.misses += 1
-            return None
+                    return result.get('value') if isinstance(result, dict) else result
+                else:
+                    self._stats.misses += 1
+                    return None
             except Exception as e:
                 logger.error(f"Redis get error: {e}")
                 self._stats.misses += 1
@@ -159,7 +160,6 @@ class CacheService:
                 # Check expiration
                 if time.time() > cached['expires']:
                     self._memory_cache.delete(key)
-                    self._stats.evictions += 1
                     return None
                 return cached['value']
             else:
@@ -191,10 +191,7 @@ class CacheService:
         if self._redis_client:
             try:
                 result = self._redis_client.delete(key)
-                if result:
-                    self._stats.evictions += 1
                 return True
-                return False
             except Exception as e:
                 logger.error(f"Redis delete error: {e}")
                 return False
